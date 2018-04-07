@@ -17,7 +17,9 @@ Renamer for media files trying to identify searching on web (googler,ddgr,ducker
   - direct download file: https://raw.githubusercontent.com/EsTass/pymediaident/master/pymediaident.py
  
 ## Usage
+```
 pymediaident.py [options] [-f FILE|-fs Searchtext]
+```
 
 ### OPTIONS
 ```
