@@ -737,6 +737,7 @@ MEDIADATA={}
 ##IMDB
 if G_GETDATAFROM == 'imdb':
     imdbid = False
+    url=False
     
     if len(G_GETDATAFROM_ID) > 0:
         imdbid=G_GETDATAFROM_ID
@@ -752,7 +753,6 @@ if G_GETDATAFROM == 'imdb':
         
         printE( 'IMDB Search Title: ', SEARCHTITLE )
         searchdata = searchTitle( SEARCHTITLE )
-        url=False
         
         if searchdata != False and G_INTERACTIVE:
             printE( '##INTERACTIVE' )
