@@ -58,46 +58,46 @@ pymediaident.py [options] [-f FILE|-fs Searchtext]
  
  Search for title 'The matrix' imdb and rename file to format "%title% (%year%, %director%)":
  ```
- pymediaident -f "./Th3 mAtr12.mp4" -fs "The matrix" -s imdb -r -rfm "%title% (%year%, %director%)"
+ pymediaident.py -f "./Th3 mAtr12.mp4" -fs "The matrix" -s imdb -r -rfm "%title% (%year%, %director%)"
  ```
  
  Search for title 'The matrix' imdb and rename file to format "%title% (%year%, %director%)" only preview:
  ```
- pymediaident -f "./Th3 mXtr12.mp4" -fs "The matrix" -s imdb -r -rfm "%title% (%year%, %director%)" -dr
+ pymediaident.py -f "./Th3 mXtr12.mp4" -fs "The matrix" -s imdb -r -rfm "%title% (%year%, %director%)" -dr
  ```
  
  Ident file './The matrix.mp4' imdb and rename to format "%title% (%year%, %director%)":
  ```
- pymediaident -f "./The matrix.mp4" -s imdb -r -rfm "%title% (%year%, %director%)"
+ pymediaident.py -f "./The matrix.mp4" -s imdb -r -rfm "%title% (%year%, %director%)"
  ```
  
  Ident file './Th3 mAtr12.mp4' forcing search "the matrix" imdb and rename to format "%title% (%year%, %director%)":
  ```
- pymediaident -fs "the matrix" -f "./Th3 mAtr12.mp4" -s imdb -r -rfm "%title% (%year%, %director%)"
+ pymediaident.py -fs "the matrix" -f "./Th3 mAtr12.mp4" -s imdb -r -rfm "%title% (%year%, %director%)"
  ```
  
  Ident file './The matrix.mp4' duckduckgo/filmaffinity and rename to format "%title% (%year%, %director%)" in interactive mode:
  ```
- pymediaident -f "./The matrix.mp4" -s filmaffinity -r -rfm "%title% (%year%, %director%)" -i -es ddgr
+ pymediaident.py -f "./The matrix.mp4" -s filmaffinity -r -rfm "%title% (%year%, %director%)" -i -es ddgr
  ```
  
  Ident file './The matrix.mp4' duckduckgo/imdb and rename to format "%title% (%year%, %director%)" in interactive mode and autoselect option 2 of interactive list:
  ```
- pymediaident -f "./The matrix.mp4" -s imdb -r -rfm "%title% (%year%, %director%)" -i -if 2 -es ddgr
+ pymediaident.py -f "./The matrix.mp4" -s imdb -r -rfm "%title% (%year%, %director%)" -i -if 2 -es ddgr
  ```
  
  Ident file './The matrix.mp4' imdb, rename to format "%title% (%year%, %director%)" and move to folder "./%title%":
  ```
- pymediaident -f "./The matrix.mp4" -s imdb -r -rfm "%title% (%year%, %director%)" -m "./%title%"
+ pymediaident.py -f "./The matrix.mp4" -s imdb -r -rfm "%title% (%year%, %director%)" -m "./%title%"
  ```
  
  Ident file './The matrix.mp4' duckduckgo/filmaffinity, rename to format "%title% (%year%, %director%)" and show only json data:
  ```
- pymediaident -f "./The matrix.mp4" -s filmaffinity -r -rfm "%title% (%year%, %director%)" -es ddgr --json
+ pymediaident.py -f "./The matrix.mp4" -s filmaffinity -r -rfm "%title% (%year%, %director%)" -es ddgr --json
  ```
  
  Ident file './The matrix.mp4' duckduckgo/omdb and rename to format "%title% (%year%, %director%)" in interactive mode:
  ```
- pymediaident -f "./The matrix.mp4" -s omdb -apikey XXXXXX -r -rfm "%title% (%year%, %director%)" -es ddgr -i
+ pymediaident.py -f "./The matrix.mp4" -s omdb -apikey XXXXXX -r -rfm "%title% (%year%, %director%)" -es ddgr -i
  ```
  
