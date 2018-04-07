@@ -99,7 +99,7 @@ OPTIONS
  --json : return onlyjson data
  -dr : dryrun, force not changes
  -i : interactive mode, select search result to assign
- -if X: force X position of interactive mode
+ -if X: force select X position of interactive mode
  -fs "Search String" : force search string for file
  
 Formats for -rfm -rfs -m -hl
@@ -359,14 +359,23 @@ def imdb_getReleaseDate(data):
             country, datenow = s.split('::')
             printE( 'Release date check: ', country, datenow )
             if defdate == '':
-                defdate = datetime.datetime.strptime(datenow, "%d %B %Y").strftime('%Y-%m-%d')
+                try:
+                    defdate = datetime.datetime.strptime(datenow, "%d %B %Y").strftime('%Y-%m-%d')
+                except:
+                    pass
                 printE( 'Release date first defdate: ', defdate )
             elif country == G_COUNTRY:
-                result = datetime.datetime.strptime(datenow, "%d %B %Y").strftime('%Y-%m-%d')
+                try:
+                    result = datetime.datetime.strptime(datenow, "%d %B %Y").strftime('%Y-%m-%d')
+                except:
+                    pass
                 printE( 'Release date finded: ', result )
                 break
             elif country == G_COUNTRY_DEF:
-                defdate = datetime.datetime.strptime(datenow, "%d %B %Y").strftime('%Y-%m-%d')
+                try:
+                    defdate = datetime.datetime.strptime(datenow, "%d %B %Y").strftime('%Y-%m-%d')
+                except:
+                    pass
                 printE( 'Release date defdate: ', defdate )
     
     if result == '':
