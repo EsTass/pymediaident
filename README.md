@@ -1,6 +1,6 @@
 # pymediaident 0.1
 python media (movies, series) ident and renamer alpha
-
+![pymediaident](https://raw.githubusercontent.com/EsTass/pymediaident/master/img/example.gif)
 
 ## Description
 Renamer for media files trying to identify searching on web (googler,ddgr,ducker), getting data from IMDBpy, python_filmaffinity or OMDB.
