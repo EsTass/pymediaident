@@ -58,12 +58,12 @@ pymediaident.py [options] [-f FILE|-fs Searchtext]
  
  Search for title 'The matrix' imdb and rename file to format "%title% (%year%, %director%)":
  ```
- pymediaident -fs "The matrix" -s imdb -r -rfm "%title% (%year%, %director%)"
+ pymediaident -f "./Th3 mAtr12.mp4" -fs "The matrix" -s imdb -r -rfm "%title% (%year%, %director%)"
  ```
  
  Search for title 'The matrix' imdb and rename file to format "%title% (%year%, %director%)" only preview:
  ```
- pymediaident -fs "The matrix" -s imdb -r -rfm "%title% (%year%, %director%)" -dr
+ pymediaident -f "./Th3 mXtr12.mp4" -fs "The matrix" -s imdb -r -rfm "%title% (%year%, %director%)" -dr
  ```
  
  Ident file './The matrix.mp4' imdb and rename to format "%title% (%year%, %director%)":
@@ -73,7 +73,7 @@ pymediaident.py [options] [-f FILE|-fs Searchtext]
  
  Ident file './Th3 mAtr12.mp4' forcing search "the matrix" imdb and rename to format "%title% (%year%, %director%)":
  ```
- pymediaident -fs "the matrix" -f "./The matrix.mp4" -s imdb -r -rfm "%title% (%year%, %director%)"
+ pymediaident -fs "the matrix" -f "./Th3 mAtr12.mp4" -s imdb -r -rfm "%title% (%year%, %director%)"
  ```
  
  Ident file './The matrix.mp4' duckduckgo/filmaffinity and rename to format "%title% (%year%, %director%)" in interactive mode:
