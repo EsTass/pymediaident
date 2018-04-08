@@ -584,14 +584,17 @@ def tvdbid_extradata(title,season,chapter):
     
     printE('Extradata TheTVDB', title, season, chapter)
     t = tvdb_api.Tvdb(language=G_LANG)
-    data = t[title]
-    #printE('TheTVDB result: ',data.data.keys())
-    #printE('Episode title TheTVDB result: ',data.data)
-    if len(data.data.keys())>0:
-        printE('Extradata TheTVDB result: ',data['seriesName'])
-        result={}
-        result['releasedate']=omdb_getReleaseDate(data['firstAired'])
-        result['chaptertitle']=data[season][chapter]['episodeName']
+    try:
+        data = t[title]
+        #printE('TheTVDB result: ',data.data.keys())
+        #printE('Episode title TheTVDB result: ',data.data)
+        if len(data.data.keys())>0:
+            printE('Extradata TheTVDB result: ',data['seriesName'])
+            result={}
+            result['releasedate']=omdb_getReleaseDate(data['firstAired'])
+            result['chaptertitle']=data[season][chapter]['episodeName']
+    except:
+        pass
     
     return result
 
@@ -816,11 +819,13 @@ if G_GETDATAFROM == 'imdb':
         printE( 'IMDBid(forced): ' + imdbid )
     else:
         if SEASON != False:
-            SEARCHTITLE += ' ' + str( SEASON ) + 'x' + str( CHAPTER )
+            SEARCHTITLE += ' ' + str( SEASON ) + 'x' + str( CHAPTER ) + ' serie '
         
         #forced searchstring
         if G_FSEARCHSTRING:
-            printE( 'Forced Search Title: ', SEARCHTITLE )
+            if SEASON != False:
+                G_FSEARCHSTRING += ' serie '
+            printE( 'Forced Search Title: ', G_FSEARCHSTRING )
             SEARCHTITLE=G_FSEARCHSTRING
         
         printE( 'IMDB Search Title: ', SEARCHTITLE )
@@ -929,11 +934,13 @@ elif G_GETDATAFROM == 'filmaffinity':
         printE( 'FilmAffinityID(forced): ' + dataid )
     else:
         if SEASON != False:
-            SEARCHTITLE += ' ' + str( SEASON ) + 'x' + str( CHAPTER )
+            SEARCHTITLE += ' ' + str( SEASON ) + 'x' + str( CHAPTER ) + ' serie '
         
         #forced searchstring
         if G_FSEARCHSTRING:
-            printE( 'Forced Search Title: ', SEARCHTITLE )
+            if SEASON != False:
+                G_FSEARCHSTRING += ' serie '
+            printE( 'Forced Search Title: ', G_FSEARCHSTRING )
             SEARCHTITLE=G_FSEARCHSTRING
         
         printE( 'FILMAFFINITY Search Title: ', SEARCHTITLE )
@@ -1064,11 +1071,13 @@ elif G_GETDATAFROM == 'omdb':
         printE( 'OMDB(forced): ' + dataid )
     else:
         if SEASON != False:
-            SEARCHTITLE += ' ' + str( SEASON ) + 'x' + str( CHAPTER )
+            SEARCHTITLE += ' ' + str( SEASON ) + 'x' + str( CHAPTER ) + ' serie '
             
         #forced searchstring
         if G_FSEARCHSTRING:
-            printE( 'Forced Search Title: ', SEARCHTITLE )
+            if SEASON != False:
+                G_FSEARCHSTRING += ' serie '
+            printE( 'Forced Search Title: ', G_FSEARCHSTRING )
             SEARCHTITLE=G_FSEARCHSTRING
         
         printE( 'OMDB Search Title: ', SEARCHTITLE )
@@ -1168,11 +1177,13 @@ elif G_GETDATAFROM == 'thetvdb':
         printE( 'TheTVDB(forced): ' + dataid )
     else:
         if SEASON != False:
-            SEARCHTITLE += ' ' + str( SEASON ) + 'x' + str( CHAPTER )
+            SEARCHTITLE += ' ' + str( SEASON ) + 'x' + str( CHAPTER ) + ' serie '
             
         #forced searchstring
         if G_FSEARCHSTRING:
-            printE( 'Forced Search Title: ', SEARCHTITLE )
+            if SEASON != False:
+                G_FSEARCHSTRING += ' serie '
+            printE( 'Forced Search Title: ', G_FSEARCHSTRING )
             SEARCHTITLE=G_FSEARCHSTRING
         
         printE( 'TheTVDB Search Title: ', SEARCHTITLE )
