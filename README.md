@@ -29,7 +29,7 @@ pymediaident.py [options] [-f FILE|-fs Searchtext]
  -f FILETOIDENT : path to file to ident
  -es 'googler|ddgr|ducker' : external search
  -s imdb|filmaffinity|omdb|thetvdb : get data from
- -sid XXX : forced id for imdb|filmaffinity|omdb
+ -sid XXX : forced id for imdb|filmaffinity|omdb|thetvdb
  -apikey XXX : apikey for omdb|thetvdb
  -l en|es|mx|ar|cl|co... : languaje
  -c USA : country for release date
