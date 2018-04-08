@@ -47,6 +47,7 @@ pymediaident.py [options] [-f FILE|-fs Searchtext]
  -i : interactive mode, select search result to assign
  -if X: force select X position of interactive mode
  -fs "Search String" : force search string for file
+ -bwf badwordsfile.txt : bad words for clean filenames (1 word each line)
  ```
  
 ### Formats for file/folders (-rfm -rfs -m -hl)
