@@ -82,7 +82,7 @@ G_INTERACTIVE_SET=False
 G_FSEARCHSTRING=False
 
 #OPTIONS
-OPTIONSMSG = '''
+MSG_OPTIONS = '''
 OPTIONS
  -h : help
  -f FILETOIDENT : path to file to ident
@@ -113,9 +113,89 @@ Formats for -rfm -rfs -m -hl
  %genre%
  
 '''
-
+MSG_APPINFO='pymediaident v0.2 2018 https://github.com/EsTass/pymediaident'
 
 #FUNCTIONS
+
+def cleanFileName(file):
+    FILENAMECLEAN=file
+    debug=False
+    
+    #EXTRACT YEAR
+    #YEAR=re.search(r"\d{4}", FILENAME).group(1)
+    YEARS=re.findall('(\d{4})', FILENAME)
+    YEAR=''
+    for y in YEARS:
+        if int(y) > 1900 and int(y) < (datetime.date.today().year + 2):
+            if debug: printE( 'YEAR: ', y )
+            YEAR=y
+            break
+
+    #EXTRACT CHAPTER
+    CHAPTER=False
+    SEASON=False
+    CSREMOVE=False
+    SEASON, CHAPTER, CSREMOVE = extractChapter( FILENAME )
+    if SEASON != False:
+        if debug: printE( 'Season: ', SEASON )
+        if debug: printE( 'Chapter: ', CHAPTER )
+        if debug: printE( 'Detected: ', CSREMOVE )
+    else:
+        if debug: printE( 'No Series data (sxc): ', FILENAME )
+
+    #CLEAN FILENAME
+
+    FILENAMECLEAN=FILENAME
+
+    #REMOVE SEASONxCHAPTER
+    if CSREMOVE != False:
+        FILENAMECLEAN=FILENAMECLEAN.replace(CSREMOVE,'')
+        if debug: printE( 'File Clean SEASONxCHPATER: ', FILENAMECLEAN )
+
+    #REMOVE YEAR
+    FILENAMECLEAN=FILENAMECLEAN.replace(YEAR,'')
+    if debug: printE( 'File Clean YEAR: ', FILENAMECLEAN )
+
+    #()
+    FILENAMECLEAN=re.sub('\(.*?\)', '', FILENAMECLEAN)
+    if debug: printE( 'File Clean (): ', FILENAMECLEAN )
+
+    #[]
+    FILENAMECLEAN=re.sub('\[.*?\]', '', FILENAMECLEAN)
+    if debug: printE( 'File Clean []: ', FILENAMECLEAN )
+
+    #domains
+    filter=r'(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)?[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$'
+    f=re.sub(filter, '', FILENAMECLEAN, re.IGNORECASE)
+    if len(f) > 5:
+        FILENAMECLEAN=f
+    if debug: printE( 'File Clean Domains: ', FILENAMECLEAN )
+    
+    #remove extensions
+    for rext in remove_extension:
+        FILENAMECLEAN=FILENAMECLEAN.replace(rext, ' ')
+    if debug: printE( 'File Clean extensions: ', FILENAMECLEAN )
+
+    #remove all non alfanumeric chars
+    FILENAMECLEAN=re.sub(r'[^a-zA-Z0-9]', ' ',FILENAMECLEAN)
+    if debug: printE( 'File Clean All except chars: ', FILENAMECLEAN )
+
+    #extra .
+    FILENAMECLEAN=re.sub('\.+','.',FILENAMECLEAN)
+    if debug: printE( 'File Clean .: ', FILENAMECLEAN )
+
+    #extra spaces
+    FILENAMECLEAN=re.sub(' +',' ',FILENAMECLEAN)
+    if debug: printE( 'File Clean spaces: ', FILENAMECLEAN )
+
+    #remoev ,
+    FILENAMECLEAN=re.sub(',+',',',FILENAMECLEAN)
+    if debug: printE( 'File Clean ,: ', FILENAMECLEAN )
+
+    #trim
+    FILENAMECLEAN=FILENAMECLEAN.strip()
+    
+    return YEAR,CHAPTER,SEASON,CSREMOVE,FILENAMECLEAN
 
 def getParam( param ):
     result=False
@@ -276,28 +356,29 @@ def interactiveShow(searchdata, defselection=False):
 
 def interactiveExist(url, urls):
     result=False
+    debug=False
     
     a=extractIMDBID(url)
     if a:
-        #printE('Check IMDB:', a, str(urls))
+        if debug: printE('Check IMDB:', a, str(urls))
         if a in str(urls):
             result=True
-            #printE('Check IMDB FINDED:', a, str(urls))
+            if debug: printE('Check IMDB FINDED:', a, str(urls))
     if result==False:
         a=extractFilmAffinityID(url)
         if a:
-            #printE('Check FilmAffinity:', a, str(urls))
+            if debug: printE('Check FilmAffinity:', a, str(urls))
             a='film'+a
             if a in str(urls):
-                #printE('Check FilmAffinity FINDED:', a, str(urls))
+                if debug: printE('Check FilmAffinity FINDED:', a, str(urls))
                 result=True
     if result==False:
         a=extractTheTVDBID(url)
         if a:
-            #printE('Check TheTVDB:', a, str(urls))
+            if debug: printE('Check TheTVDB:', a, str(urls))
             a=''+a
             if a in str(urls):
-                #printE('Check TheTVDB FINDED:', a, str(urls))
+                if debug: printE('Check TheTVDB FINDED:', a, str(urls))
                 result=True
     
     return result
@@ -553,7 +634,7 @@ if p != False:
     
 #BASE INFO
 printE( '' )
-printE( 'pymediaident 2018 https://github.com/EsTass/pymediaident' )
+printE( MSG_APPINFO )
 printE( '' )
 
 #-h or no params
@@ -561,7 +642,7 @@ if len(ARG) < 2 or getParam('-h') != False:
     G_NOINFO=False
     printE( 'Usage:' )
     printE( ' pymediaident.py [options] filetoscan' )
-    printE( OPTIONSMSG )
+    printE( MSG_OPTIONS )
     printE( '' )
     FILE=False
     exit(0)
@@ -695,81 +776,10 @@ if is_tool(CMDSEARCH) == False:
 
 #FILENAME CLEAN
 
-
 #filename
 FILENAME=ntpath.basename(FILE)
 printE( 'File: ', FILENAME )
-
-#EXTRACT YEAR
-#YEAR=re.search(r"\d{4}", FILENAME).group(1)
-YEARS=re.findall('(\d{4})', FILENAME)
-YEAR=''
-for y in YEARS:
-    if int(y) > 1900 and int(y) < (datetime.date.today().year + 2):
-        printE( 'YEAR: ', y )
-        YEAR=y
-        break
-
-#EXTRACT CHAPTER
-CHAPTER=False
-SEASON=False
-CSREMOVE=False
-SEASON, CHAPTER, CSREMOVE = extractChapter( FILENAME )
-if SEASON != False:
-    printE( 'Season: ', SEASON )
-    printE( 'Chapter: ', CHAPTER )
-    printE( 'Detected: ', CSREMOVE )
-else:
-    printE( 'No Series data (sxc): ', FILENAME )
-
-#CLEAN FILENAME
-
-FILENAMECLEAN=FILENAME
-
-#REMOVE SEASONxCHAPTER
-if CSREMOVE != False:
-    FILENAMECLEAN=FILENAMECLEAN.replace(CSREMOVE,'')
-    printE( 'File Clean SEASONxCHPATER: ', FILENAMECLEAN )
-
-#REMOVE YEAR
-FILENAMECLEAN=FILENAMECLEAN.replace(YEAR,'')
-printE( 'File Clean YEAR: ', FILENAMECLEAN )
-
-#()
-FILENAMECLEAN=re.sub('\(.*?\)', '', FILENAMECLEAN)
-printE( 'File Clean (): ', FILENAMECLEAN )
-
-#[]
-FILENAMECLEAN=re.sub('\[.*?\]', '', FILENAMECLEAN)
-printE( 'File Clean []: ', FILENAMECLEAN )
-
-#domains
-FILENAMECLEAN=re.sub(r'(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}     /)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:\'".,<>?«»“”‘’]))', '', FILENAMECLEAN)
-printE( 'File Clean Domains: ', FILENAMECLEAN )
-
-#remove extensions
-for rext in remove_extension:
-    FILENAMECLEAN=FILENAMECLEAN.replace(rext, ' ')
-printE( 'File Clean extensions: ', FILENAMECLEAN )
-
-#remove all non alfanumeric chars
-FILENAMECLEAN=re.sub(r'[^a-zA-Z0-9]', ' ',FILENAMECLEAN)
-printE( 'File Clean All except chars: ', FILENAMECLEAN )
-
-#extra .
-FILENAMECLEAN=re.sub('\.+','.',FILENAMECLEAN)
-printE( 'File Clean .: ', FILENAMECLEAN )
-
-#extra spaces
-FILENAMECLEAN=re.sub(' +',' ',FILENAMECLEAN)
-printE( 'File Clean spaces: ', FILENAMECLEAN )
-
-#remoev ,
-FILENAMECLEAN=re.sub(',+',',',FILENAMECLEAN)
-printE( 'File Clean ,: ', FILENAMECLEAN )
-
-#trim
-FILENAMECLEAN=FILENAMECLEAN.strip()
+YEAR,CHAPTER,SEASON,CSREMOVE,FILENAMECLEAN=cleanFileName(FILENAME)
 
 #SEARCH TITLE from clean file
 SEARCHTITLE = FILENAMECLEAN + ' ' + YEAR
@@ -958,6 +968,8 @@ elif G_GETDATAFROM == 'filmaffinity':
         service = python_filmaffinity.FilmAffinity(lang=G_LANG)
         data = service.get_movie(id=dataid)
         #printE('FilmAffinity result: ',data)
+        #printE('FilmAffinity result: ',data.keys())
+        
         if data:
             title=re.sub('\(.*?\)', '', data[ 'title' ]).strip()
             printE( 'Title: ', title )
@@ -1289,7 +1301,10 @@ elif 'title' in MEDIADATA.keys():
         else:
             printE('Rename:', FILE, nfile)
             a=nfile
-            os.rename( FILE, a )
+            try:
+                os.rename( FILE, a )
+            except:
+                pass
     
     #-hl hardlink
     if G_HARDLINK:
@@ -1306,7 +1321,10 @@ elif 'title' in MEDIADATA.keys():
                 printE('Folder Created:', NEWFOLDER)
                 nfile2=os.path.join(NEWFOLDER,os.path.basename(nfile))
                 #nfile2=NEWFOLDERFILE
-                os.link( nfile, nfile2)
+                try:
+                    os.link( nfile, nfile2)
+                except:
+                    pass
                 if os.path.isfile(nfile2):
                     printE('File hardlinked:', nfile2)
                 else:
@@ -1327,7 +1345,10 @@ elif 'title' in MEDIADATA.keys():
             if os.path.isdir(NEWFOLDER):
                 printE('Folder Created:', NEWFOLDER)
                 nfile2=os.path.join(NEWFOLDER,os.path.basename(nfile))
-                os.rename( nfile, nfile2)
+                try:
+                    os.rename( nfile, nfile2)
+                except:
+                    pass
                 if os.path.isfile(nfile2):
                     printE('File Moved:', nfile2)
                 else:
