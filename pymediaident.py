@@ -43,7 +43,7 @@ G_GETDATAFROM_ID=''
 CMDSEARCHLIST = [ 'googler', 'ddgr', 'ducker' ]
 CMDSEARCH = ''
 #lang
-G_LANG='us'
+G_LANG='en'
 #country
 G_COUNTRY='USA'
 G_COUNTRY_DEF='USA'
@@ -210,7 +210,7 @@ def extractChapter( filename ):
 
 def nameFormat(format,MEDIAINFO):
     result=''
-    debug=True
+    debug=False
     #FORMATS
     #%title%
     #%year%
@@ -226,9 +226,9 @@ def nameFormat(format,MEDIAINFO):
     if debug: printE(' Formatting:', format)
     format=format.replace('%director%', MEDIAINFO['director'])
     if debug: printE(' Formatting:', format)
-    format=format.replace('%season%', MEDIAINFO['season'])
+    format=format.replace('%season%', MEDIAINFO['season'].zfill(2))
     if debug: printE(' Formatting:', format)
-    format=format.replace('%chapter%', MEDIAINFO['chapter'])
+    format=format.replace('%chapter%', MEDIAINFO['chapter'].zfill(2))
     if debug: printE(' Formatting:', format)
     format=format.replace('%genre%', MEDIAINFO['genres'].split(',')[0])
     if debug: printE(' Formatting:', format)
@@ -388,7 +388,15 @@ def imdb_getPlot(data):
     
     if isinstance(data, list):
         for s in data:
-            plot, username = s.split('::')
+            d=s.split('::')
+            if len(d) == 1:
+                plot=d[0]
+            else:
+                plot=s
+            if len(d) == 2:
+                username=d[1]
+            else:
+                username=''
             #printE( 'Plot search: ', plot, username )
             if len(plot) > len(result):
                 result=plot
@@ -400,7 +408,15 @@ def imdb_getPlotShort(data):
     
     if isinstance(data, list):
         for s in data:
-            plot, username = s.split('::')
+            d=s.split('::')
+            if len(d) == 1:
+                plot=d[0]
+            else:
+                plot=s
+            if len(d) == 2:
+                username=d[1]
+            else:
+                username=''
             #printE( 'Plot Short search: ', plot, username )
             if len(result) == 0:
                 result=plot
@@ -884,7 +900,8 @@ elif G_GETDATAFROM == 'filmaffinity':
         data = service.get_movie(id=dataid)
         printE('FilmAffinity result: ',data)
         if data:
-            printE( 'Title: ', data[ 'title' ] )
+            title=re.sub('\(.*?\)', '', data[ 'title' ]).strip()
+            printE( 'Title: ', title )
             printE( 'Plot: ', data['description'] )
             printE( 'Plot Short: ', '' )
             printE( 'Year: ', data['year'] )
@@ -892,7 +909,7 @@ elif G_GETDATAFROM == 'filmaffinity':
             #kind; string; one in ('movie', 'tv series', 'tv mini series', 'video game', 'video movie', 'tv movie', 'episode')
             kind=''
             if isinstance(data['genre'],list):
-                if 'serie' in str(data['genre']):
+                if 'erie' in str(data['genre']):
                     kind='tv serie'
                 else:
                     kind='movie'
@@ -905,14 +922,16 @@ elif G_GETDATAFROM == 'filmaffinity':
             c = data['directors']
             director=''
             if c and isinstance(c,list):
-                printE( 'Director: ', c[0] )
-                director=c[0]
+                a=re.sub('\(.*?\)', '', c[0]).strip()
+                printE( 'Director: ', a )
+                director=a
             
             c = data['actors']
             actors=[]
             if c and isinstance(c,list):
                 for a in c[:ACTORS_MAX]:
-                    printE( ' Actors: ', a )
+                    a=re.sub('\(.*?\)', '', a).strip()
+                    printE( ' Actors: ', a)
                     actors.append(a)
             
             c = data['genre']
@@ -923,7 +942,7 @@ elif G_GETDATAFROM == 'filmaffinity':
                     genres.append(a)
             
             #Prepare data
-            MEDIADATA['title']=data[ 'title' ]
+            MEDIADATA['title']=title
             MEDIADATA['plot']=data[ 'description' ]
             MEDIADATA['plotshort']=''
             MEDIADATA['kind']=kind
