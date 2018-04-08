@@ -115,11 +115,60 @@ Formats for -rfm -rfs -m -hl
 '''
 MSG_APPINFO='pymediaident v0.2 2018 https://github.com/EsTass/pymediaident'
 
+G_BADWORDS=[ \
+        'torrent', \
+        'xvid', \
+        'divx', \
+        'mp4', \
+        'acc', \
+        'mp3', \
+        'x264', \
+        'x265', \
+        'microhd', \
+        'micro-hd', \
+        'tsscreener', \
+        'tvscreener', \
+        'hdscreener', \
+        'ts-screener', \
+        'tv-screener', \
+        'hd-screener', \
+        'screener', \
+        'dvdline', \
+        'dvd-line', \
+        'dvdrip', \
+        'dvd-rip', \
+        'dvd', \
+        'dvbrip', \
+        'dvb-rip', \
+        'dvbline', \
+        'dvb-line', \
+        'dvb', \
+        'fullbluray', \
+        'bluray', \
+        'blray', \
+        'bd-rip', \
+        'bdline', \
+        'bd-line', \
+        'bdrip', \
+        'bdremux', \
+        'vp8', \
+        'vp9', \
+        '1080p', \
+        '720p', \
+        '2ch', \
+        '5ch', \
+        '7ch', \
+        '8ch', \
+        '4K ', \
+        '3d ', \
+    ]
+
 #FUNCTIONS
 
 def cleanFileName(file):
+    global G_BADWORDS
     FILENAMECLEAN=file
-    debug=False
+    debug=True
     
     #EXTRACT YEAR
     #YEAR=re.search(r"\d{4}", FILENAME).group(1)
@@ -175,6 +224,12 @@ def cleanFileName(file):
     for rext in remove_extension:
         FILENAMECLEAN=FILENAMECLEAN.replace(rext, ' ')
     if debug: printE( 'File Clean extensions: ', FILENAMECLEAN )
+
+    #remove bad words
+    for bd in G_BADWORDS:
+        pattern = re.compile(bd, re.IGNORECASE)
+        FILENAMECLEAN=pattern.sub(bd,FILENAMECLEAN)
+    if debug: printE( 'File Clean bad words: ', FILENAMECLEAN )
 
     #remove all non alfanumeric chars
     FILENAMECLEAN=re.sub(r'[^a-zA-Z0-9]', ' ',FILENAMECLEAN)
