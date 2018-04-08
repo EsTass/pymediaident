@@ -13,6 +13,8 @@ Renamer for media files trying to identify searching on web (googler,ddgr,ducker
  - IMDBpy: https://imdbpy.sourceforge.io/
  - python_filmaffinity: https://github.com/sergiormb/python_filmaffinity
  - omdb: https://pypi.python.org/pypi/omdb
+ - tvdb_api: https://github.com/dbr/tvdb_api
+ 
  ### Download
   - direct download file: https://raw.githubusercontent.com/EsTass/pymediaident/master/pymediaident.py
  
@@ -26,9 +28,9 @@ pymediaident.py [options] [-f FILE|-fs Searchtext]
  -h : help
  -f FILETOIDENT : path to file to ident
  -es 'googler|ddgr|ducker' : external search
- -s imdb|filmaffinity|omdb : get data from
+ -s imdb|filmaffinity|omdb|thetvdb : get data from
  -sid XXX : forced id for imdb|filmaffinity|omdb
- -apikey XXX : apikey for omdb
+ -apikey XXX : apikey for omdb|thetvdb
  -l en|es|mx|ar|cl|co... : languaje
  -c USA : country for release date
  -r : rename
