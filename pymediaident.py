@@ -80,6 +80,8 @@ G_INTERACTIVE=False
 G_INTERACTIVE_SET=False
 #Force search string
 G_FSEARCHSTRING=False
+#barwords txt file
+G_BADWORDSFILE=False
 
 #OPTIONS
 MSG_OPTIONS = '''
@@ -94,7 +96,7 @@ OPTIONS
  -c USA : country for release date
  -r : rename
  -rfm "%title% (%year%, %director%)" : rename format movie
- -rfs "%title% %season%x%chapter%(%year%, %director%)" : rename format eries
+ -rfs "%title% %season%x%chapter%(%year%, %director%)" : rename format series
  -m "/path/%title%": move file to folder with format name 
  -hl "/path/%title%": hardlink file to folder with format name 
  --json : return onlyjson data
@@ -102,6 +104,7 @@ OPTIONS
  -i : interactive mode, select search result to assign
  -if X: force select X position of interactive mode
  -fs "Search String" : force search string for file
+ -bwf badwordsfile.txt
  
 Formats for -rfm -rfs -m -hl
  %title%
@@ -164,6 +167,29 @@ G_BADWORDS=[ \
     ]
 
 #FUNCTIONS
+
+def getBadWordsFile(file):
+    global G_BADWORDS
+    result=False
+    num=0
+    debug=False
+    
+    if os.path.isfile(file):
+        printE('Loading BadWordsFile:', file)
+        try:
+            with open(file, 'r') as f:
+                data = f.read().splitlines()
+                if data:
+                    for word in data:
+                        if debug: printE('BadWord+:',word)
+                        G_BADWORDS.append(word)
+                        num+=1
+            printE('BadWords Loaded:',str(num))
+        except:
+            pass
+    
+    if debug: exit()
+    return result
 
 def cleanFileName(file):
     global G_BADWORDS
@@ -673,7 +699,7 @@ ARG = sys.argv
  -c USA : country for release date
  -r : rename
  -rfm "%title% (%year%, %director%)" : rename format movie
- -rfs "%title% %season%x%chapter%(%year%, %director%)" : rename format eries
+ -rfs "%title% %season%x%chapter%(%year%, %director%)" : rename format series
  -m "/path/%title%": move file to folder with format name 
  -hl "/path/%title%": hardlink file to folder with format name 
  --json : return onlyjson data
@@ -681,6 +707,7 @@ ARG = sys.argv
  -i : interactive mode, select search result to assign
  -if X: force X position of interactive mode
  -fs "Search String" : force search string for file
+ -bwf badwordsfile.txt
  '''
 
 #--json
@@ -807,6 +834,14 @@ p=getParam('-dr')
 if p != False:
     printE('DryRun: not making changes')
     G_DRYRUN=True
+
+#-bwf
+p=getParam('-bwf')
+if p != False and len(p) > 0:
+    printE('BadWordsFile: ', p)
+    G_BADWORDSFILE=p
+    getBadWordsFile(G_BADWORDSFILE)
+    printE('BadWords Total:', len(G_BADWORDS))
 
 #check file
 
