@@ -1,4 +1,4 @@
-# pymediaident 0.1
+# pymediaident 0.2
 python media (movies, series) ident, rename and show json data. beta Version.
 ![pymediaident](https://raw.githubusercontent.com/EsTass/pymediaident/master/img/example.gif)
 
