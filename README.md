@@ -14,6 +14,10 @@ Renamer for media files trying to identify searching on web (googler,ddgr,ducker
  - python_filmaffinity: https://github.com/sergiormb/python_filmaffinity
  - omdb: https://pypi.python.org/pypi/omdb
  - tvdb_api: https://github.com/dbr/tvdb_api
+ ### Dependencies Install
+ ```
+ pip install googler IMDBpy python_filmaffinity omdb tvdb_api
+ ```
  
  ### Download
   - direct download file: https://raw.githubusercontent.com/EsTass/pymediaident/master/pymediaident.py
