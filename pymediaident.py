@@ -104,7 +104,7 @@ OPTIONS
  -i : interactive mode, select search result to assign
  -if X: force select X position of interactive mode
  -fs "Search String" : force search string for file
- -bwf badwordsfile.txt
+ -bwf badwordsfile.txt : bad words for clean filenames (1 word each line)
  
 Formats for -rfm -rfs -m -hl
  %title%
@@ -468,29 +468,52 @@ def interactiveExist(url, urls):
 
 def searchTitle( title, extra='imdb.com' ):
     global CMDSEARCH
+    global CMDSEARCHLIST
+    global G_INTERACTIVE
     result = []
-    #cmd = CMDSEARCH + ' -w imdb.com --json "' + str( title ) + '"'
-    cmd = CMDSEARCH + ' --json "' + str( title ) + ' ' + extra + '"'
+    inlist=[]
+    cmdapp=CMDSEARCH
     
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
-     
-    (output, err) = p.communicate()
-    p_status = p.wait()
+    inlist.append(cmdapp)
+    #cmd = cmdapp + ' -w imdb.com --json "' + str( title ) + '"'
+    cmd = cmdapp + ' --json "' + str( title ) + ' ' + extra + '"'
+    data=searchExtCMD(cmd)
     
-    printE( "Search cmd: ", cmd)
-    #printE( "Search Output: ", output )
-    #printE( "Return code : ", p_status )
-    #result = output
+    if data == False:
+        for s in CMDSEARCHLIST:
+            if s not in inlist:
+                cmdapp=s
+                inlist.append(cmdapp)
+                #cmd = cmdapp + ' -w imdb.com --json "' + str( title ) + '"'
+                cmd = cmdapp + ' --json "' + str( title ) + ' ' + extra + '"'
+                data=searchExtCMD(cmd)
+                if data != False:
+                    break
     
-    #get json data
-    data  = json.loads(output)
     if isinstance(data, list):
         result = data
         printE( "Links: ", len(data))
     else:
-        printE( "Error NO Links: ", output)
+        printE( "Error NO Links: ", data)
         
     return result
+
+def searchExtCMD( cmd ):
+    data=False
+    try:
+        printE( "Search cmd: ", cmd)
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
+        (output, err) = p.communicate()
+        #printE( "Search Output: ", output )
+        p_status = p.wait()
+        #printE( "Return code : ", p_status )
+        #get json data
+        data  = json.loads(output)
+    except:
+        data=False
+        pass
+    
+    return data
 
 #IMDB
 
@@ -707,7 +730,7 @@ ARG = sys.argv
  -i : interactive mode, select search result to assign
  -if X: force X position of interactive mode
  -fs "Search String" : force search string for file
- -bwf badwordsfile.txt
+ -bwf badwordsfile.txt : bad words for clean filenames (1 word each line)
  '''
 
 #--json
