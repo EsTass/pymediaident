@@ -1,4 +1,4 @@
-# pymediaident 0.3
+# pymediaident 0.4
 python media (movies, series) ident, rename and show json data. beta Version.
 ![pymediaident](https://raw.githubusercontent.com/EsTass/pymediaident/master/img/example.gif)
 
@@ -30,9 +30,11 @@ pymediaident.py [options] [-f FILE|-fp PATH|-fs Searchtext]
 ### OPTIONS
 ```
  -h : help
+ -v : verbose mode
  -f FILETOIDENT : path to file to ident
  -fp FOLDER : path to folder to scan media files and ident
  -fps 50 : min file size to folder scan to use as media file
+ -fpee ext1,ext2 : scan folder exclude extensions ('part','part.met','!qb','tmp','temp')
  -es 'googler|ddgr|ducker' : external search
  -s imdb|filmaffinity|omdb|thetvdb : get data from
  -sid XXX : forced id for imdb|filmaffinity|omdb|thetvdb
