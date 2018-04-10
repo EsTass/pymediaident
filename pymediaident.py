@@ -606,7 +606,7 @@ def searchTitle( title, extra='imdb.com' ):
     #cmd = cmdapp + ' --json "' + str( encodeUTF8( title ) ) + ' ' + extra + '"'
     #cmd = cmdapp + ' --json "' + str( encodeUTF8( title ), 'UTF-8' ) + ' ' + extra + '"'
     #cmd = cmdapp + ' --json "' + str( encodeUTF8( title ), 'ascii', 'ignore' ) + ' ' + extra + '"'
-    cmd = cmdapp + ' --json "' + remove_accents(title) + ' ' + extra + '"'
+    cmd = cmdapp + ' --json "' + str(remove_accents(title)) + ' ' + str(extra) + '"'
     
     data=searchExtCMD(cmd)
     
@@ -630,8 +630,11 @@ def searchTitle( title, extra='imdb.com' ):
     return result
 
 def remove_accents(input_str):
-    nfkd_form = unicodedata.normalize('NFKD', input_str)
-    return u"".join([c for c in nfkd_form if not unicodedata.combining(c)])
+    try:
+        nfkd_form = unicodedata.normalize('NFKD', input_str)
+        return u"".join([c for c in nfkd_form if not unicodedata.combining(c)])
+    except:
+        return input_str
 
 def searchExtCMD( cmd ):
     data=False
@@ -1130,7 +1133,7 @@ for FILE in FILELIST:
             #forced searchstring
             if G_FSEARCHSTRING:
                 if SEASON != False:
-                    G_FSEARCHSTRING += ' serie '
+                    G_FSEARCHSTRING = G_FSEARCHSTRING.decode('UTF-8') + ' serie '
                 printE( 'Forced Search Title: ', G_FSEARCHSTRING )
                 SEARCHTITLE=G_FSEARCHSTRING
             
@@ -1246,7 +1249,7 @@ for FILE in FILELIST:
             #forced searchstring
             if G_FSEARCHSTRING:
                 if SEASON != False:
-                    G_FSEARCHSTRING += ' serie '
+                    G_FSEARCHSTRING = G_FSEARCHSTRING.decode('UTF-8') + ' serie '
                 printE( 'Forced Search Title: ', G_FSEARCHSTRING )
                 SEARCHTITLE=G_FSEARCHSTRING
             
@@ -1385,7 +1388,7 @@ for FILE in FILELIST:
             #forced searchstring
             if G_FSEARCHSTRING:
                 if SEASON != False:
-                    G_FSEARCHSTRING += ' serie '
+                    G_FSEARCHSTRING = G_FSEARCHSTRING.decode('UTF-8') + ' serie '
                 printE( 'Forced Search Title: ', G_FSEARCHSTRING )
                 SEARCHTITLE=G_FSEARCHSTRING
             
@@ -1491,7 +1494,7 @@ for FILE in FILELIST:
             #forced searchstring
             if G_FSEARCHSTRING:
                 if SEASON != False:
-                    G_FSEARCHSTRING += ' serie '
+                    G_FSEARCHSTRING = G_FSEARCHSTRING.decode('UTF-8') + ' serie '
                 printE( 'Forced Search Title: ', G_FSEARCHSTRING )
                 SEARCHTITLE=G_FSEARCHSTRING
             
