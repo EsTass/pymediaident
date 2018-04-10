@@ -32,9 +32,13 @@ import omdb
 import tvdb_api
 
 #CONFIGS
+VERSION='0.3'
+#remove extension from filename
 remove_extension = [ '.avi', '.mp4', '.mpeg', '.mkv', '.mpeg4', '.ogm' ]
+#min filesize for media file (50mb)
+G_MEDIAMINSIZE = 50 * 1024 * 1024
 # web data from. imdb|filmaffinity
-G_GETDATAFROM_LIST=[ 'imdb', 'filmaffinity', 'omdb', 'thetvdb' ]
+G_GETDATAFROM_LIST=[ 'imdb', 'filmaffinity', 'omdb', 'thetvdb', 'test' ]
 G_GETDATAFROM='imdb'
 G_GETDATAFROM_KEY=''
 # forced id for imdb|filmaffinity data
@@ -88,6 +92,8 @@ MSG_OPTIONS = '''
 OPTIONS
  -h : help
  -f FILETOIDENT : path to file to ident
+ -fp FOLDER : path to folder to scan media files and ident
+ -fps 50 : min file size to folder scan to use as media file
  -es 'googler|ddgr|ducker' : external search
  -s imdb|filmaffinity|omdb|thetvdb : get data from
  -sid XXX : forced id for imdb|filmaffinity|omdb|thetvdb
@@ -116,7 +122,7 @@ Formats for -rfm -rfs -m -hl
  %genre%
  
 '''
-MSG_APPINFO='pymediaident v0.2 2018 https://github.com/EsTass/pymediaident'
+MSG_APPINFO='pymediaident v'+VERSION+' 2018 https://github.com/EsTass/pymediaident'
 
 G_BADWORDS=[ \
         'torrent', \
@@ -168,6 +174,28 @@ G_BADWORDS=[ \
 
 #FUNCTIONS
 
+def getFilesMedia(path):
+    global G_MEDIAMINSIZE
+    result = []
+
+    printE('Get Files in folder:', path)
+    path = u''
+    path = os.path.abspath(path)
+    
+    if os.path.exists( path ):
+        for folder, subfolders, files in os.walk(path):
+            for file in files:
+                filePath = os.path.join(folder, file)
+                try:
+                    if G_MEDIAMINSIZE<=os.path.getsize(filePath) \
+                    and os.path.basename(__file__) != file:
+                        result.append(filePath)
+                except:
+                    pass
+    printE('Files finded:', len(result))
+    
+    return result
+
 def getBadWordsFile(file):
     global G_BADWORDS
     result=False
@@ -194,7 +222,7 @@ def getBadWordsFile(file):
 def cleanFileName(file):
     global G_BADWORDS
     FILENAMECLEAN=file
-    debug=True
+    debug=False
     
     #EXTRACT YEAR
     #YEAR=re.search(r"\d{4}", FILENAME).group(1)
@@ -221,12 +249,19 @@ def cleanFileName(file):
     #CLEAN FILENAME
 
     FILENAMECLEAN=FILENAME
-
+    
+    #SxC cut string
+    if CSREMOVE != False:
+        ft=FILENAMECLEAN.split(CSREMOVE)
+        if ft and len(ft[0]) > 5:
+            FILENAMECLEAN=ft[0]
+            if debug: printE( 'File Cut SEASONxCHPATER: ', FILENAMECLEAN )
+    
     #REMOVE SEASONxCHAPTER
     if CSREMOVE != False:
         FILENAMECLEAN=FILENAMECLEAN.replace(CSREMOVE,'')
         if debug: printE( 'File Clean SEASONxCHPATER: ', FILENAMECLEAN )
-
+    
     #REMOVE YEAR
     FILENAMECLEAN=FILENAMECLEAN.replace(YEAR,'')
     if debug: printE( 'File Clean YEAR: ', FILENAMECLEAN )
@@ -239,12 +274,19 @@ def cleanFileName(file):
     FILENAMECLEAN=re.sub('\[.*?\]', '', FILENAMECLEAN)
     if debug: printE( 'File Clean []: ', FILENAMECLEAN )
 
-    #domains
+    #domains A
     filter=r'(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)?[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$'
     f=re.sub(filter, '', FILENAMECLEAN, re.IGNORECASE)
     if len(f) > 5:
         FILENAMECLEAN=f
-    if debug: printE( 'File Clean Domains: ', FILENAMECLEAN )
+    if debug: printE( 'File Clean Domains A: ', FILENAMECLEAN )
+    
+    #domains B
+    filter=r'[a-zA-Z0-9]+\.(com|net|org)'
+    f=re.sub(filter, '', FILENAMECLEAN, re.IGNORECASE)
+    if len(f) > 5:
+        FILENAMECLEAN=f
+    if debug: printE( 'File Clean Domains B: ', FILENAMECLEAN )
     
     #remove extensions
     for rext in remove_extension:
@@ -474,6 +516,11 @@ def searchTitle( title, extra='imdb.com' ):
     inlist=[]
     cmdapp=CMDSEARCH
     
+    if G_INTERACTIVE:
+        nn=input('Search for ['+str(title)+']:')
+        if nn and len(nn)>0:
+            title=nn
+            
     inlist.append(cmdapp)
     #cmd = cmdapp + ' -w imdb.com --json "' + str( title ) + '"'
     cmd = cmdapp + ' --json "' + str( title ) + ' ' + extra + '"'
@@ -711,28 +758,6 @@ ARG = sys.argv
 
 #ASSING PARAMS
 
-'''
- -h : help
- -f FILETOIDENT : path to file to ident
- -es 'googler|ddgr|ducker' : external search
- -s imdb|filmaffinity|omdb|thetvdb : get data from
- -sid XXX : forced id for imdb|filmaffinity|omdb|thetvdb
- -apikey XXX : apikey for omdb|thetvdb
- -l en|es|mx|ar|cl|co... : languaje
- -c USA : country for release date
- -r : rename
- -rfm "%title% (%year%, %director%)" : rename format movie
- -rfs "%title% %season%x%chapter%(%year%, %director%)" : rename format series
- -m "/path/%title%": move file to folder with format name 
- -hl "/path/%title%": hardlink file to folder with format name 
- --json : return onlyjson data
- -dr : dryrun, force not changes
- -i : interactive mode, select search result to assign
- -if X: force X position of interactive mode
- -fs "Search String" : force search string for file
- -bwf badwordsfile.txt : bad words for clean filenames (1 word each line)
- '''
-
 #--json
 p=getParam('--json')
 if p != False:
@@ -849,8 +874,33 @@ if p != False and len(p) > 0 and p.isdigit():
 FILE=False
 p=getParam('-f')
 if p != False and len(p) > 0:
-    printE('File to ident: ', p)
-    FILE=p
+    try:
+        p=os.path.abspath(p)
+        printE('File to ident: ', p)
+        FILE=p
+    except:
+        printE('ERROR::File to scan: ', p)
+        FILE=False
+        pass
+
+#-fp FOLDERPATH
+FOLDERPATH=False
+p=getParam('-fp')
+if p != False and len(p) > 0:
+    try:
+        p=os.path.abspath(p)
+        FOLDERPATH=p
+        printE('Folder to scan: ', FOLDERPATH)
+    except:
+        printE('ERROR:Folder to scan: ', p)
+        FOLDERPATH=False
+        pass
+
+#-fps
+p=getParam('-fps')
+if p != False and len(p) > 0 and p.isdigit():
+    printE('Min file size to: ', p, 'Mb')
+    G_MEDIAMINSIZE=int(p) * 1024 * 1024
 
 #-dr
 p=getParam('-dr')
@@ -879,6 +929,20 @@ if FILE:
     if FILE==False:
         printE( 'ERROR::No file to ident.' )
         exit(1)
+
+#check folder
+
+if FOLDERPATH:
+    if os.path.isdir( FOLDERPATH ) == False:
+        printE( 'Folder not exist: ', str(FOLDERPATH) )
+        FILE=False
+    else:
+        printE( 'Folder exist: ', FOLDERPATH )
+    
+    #folder needed
+    if FOLDERPATH==False:
+        printE( 'ERROR::No folder to ident.' )
+        exit(1)
     
 elif G_FSEARCHSTRING:
     printE( 'Forced Search String: ', G_FSEARCHSTRING )
@@ -890,250 +954,131 @@ if is_tool(CMDSEARCH) == False:
     exit(1)
 
 
+#GET FILES OF FOLDER IF NEEDED
+
+FILELIST=[]
+#force only search string, file or full folder
+if G_FSEARCHSTRING:
+    FILELIST.append(G_FSEARCHSTRING)
+elif FILE!=False:
+    FILELIST.append(FILE)
+else:
+    FILELIST=getFilesMedia(FOLDERPATH)
+
+#FILE ACTIONS
+
 #FILENAME CLEAN
 
-#filename
-FILENAME=ntpath.basename(FILE)
-printE( 'File: ', FILENAME )
-YEAR,CHAPTER,SEASON,CSREMOVE,FILENAMECLEAN=cleanFileName(FILENAME)
+for FILE in FILELIST:
+    #filename
+    FILENAME=ntpath.basename(FILE)
+    printE( 'File: ', FILENAME )
+    YEAR,CHAPTER,SEASON,CSREMOVE,FILENAMECLEAN=cleanFileName(FILENAME)
 
-#SEARCH TITLE from clean file
-SEARCHTITLE = FILENAMECLEAN + ' ' + YEAR
+    #SEARCH TITLE from clean file
+    SEARCHTITLE = FILENAMECLEAN + ' ' + YEAR
 
 
-##GET DATA
+    ##GET DATA
 
-#MEDIA INFO DATA
-#title
-#plot
-#plotshort
-#kind
-#releasedate
-#year
-#director
-#season
-#chapter
-#chaptertitle
-#mpaa
-#rating
-#votes
-#genres: a,b,...
-#actors: a,b,...
-#urlposter: 
-MEDIADATA={}
+    #MEDIA INFO DATA
+    #title
+    #plot
+    #plotshort
+    #kind
+    #releasedate
+    #year
+    #director
+    #season
+    #chapter
+    #chaptertitle
+    #mpaa
+    #rating
+    #votes
+    #genres: a,b,...
+    #actors: a,b,...
+    #urlposter: 
+    MEDIADATA={}
 
-##IMDB
-if G_GETDATAFROM == 'imdb':
-    imdbid = False
-    url=False
-    
-    if len(G_GETDATAFROM_ID) > 0:
-        imdbid=G_GETDATAFROM_ID
-        printE( 'IMDBid(forced): ' + imdbid )
-    else:
-        if SEASON != False:
-            SEARCHTITLE += ' ' + str( SEASON ) + 'x' + str( CHAPTER ) + ' serie '
-        
-        #forced searchstring
-        if G_FSEARCHSTRING:
-            if SEASON != False:
-                G_FSEARCHSTRING += ' serie '
-            printE( 'Forced Search Title: ', G_FSEARCHSTRING )
-            SEARCHTITLE=G_FSEARCHSTRING
-        
-        printE( 'IMDB Search Title: ', SEARCHTITLE )
-        searchdata = searchTitle( SEARCHTITLE )
-        
-        if searchdata != False and G_INTERACTIVE:
-            printE( '##INTERACTIVE' )
-            printE( '##LINKS' )
-            url=interactiveShow(searchdata,G_INTERACTIVE_SET)
-        elif searchdata != False:
-            printE( '##LINKS' )
-            for d in searchdata:
-                printE( 'Title: ' + d[ 'title' ] )
-                printE( 'URL: ' + d[ 'url' ] )
-                printE( 'Abstract: ' + d[ 'abstract' ] )
-                url=d[ 'url' ]
-                break
-        else:
-            printE( 'Search without data.' )
-    
-    if url:
-        imdbid = extractIMDBID(url)
-        if imdbid != False:
-            printE( 'IMDBid: ' + imdbid )
-        
-    #With IMDBid get data
-    if imdbid != False:
-        printE( 'Get IMDB data: ', imdbid )
-        data = getIMDBData( imdbid )
-        printE( 'Title: ', data.get( 'title' ) )
-        printE( 'Plots list: ', data.get( 'plot' ) )
-        plot=imdb_getPlot(data.get( 'plot' ))
-        printE( 'Plot: ', plot )
-        plotshort=imdb_getPlotShort(data.get( 'plot' ))
-        printE( 'Plot Short: ', plotshort )
-        printE( 'Year: ', data.get( 'year' ) )
-        #kind; string; one in ('movie', 'tv series', 'tv mini series', 'video game', 'video movie', 'tv movie', 'episode')
-        printE( 'Kind: ', data.get( 'kind' ) )
-        printE( 'Release Date A: ', data.get( 'release_date' ) )
-        if data.has_key('release dates'):
-            reldate=imdb_getReleaseDate( data['release dates'] )
-            printE( 'Release Date B: ', reldate )
-        else:
-            #TODO middle of year
-            reldate=str(data.get( 'year' ))+'-06-15'
-            printE( 'Release Date C: ', reldate )
-        c = data.get( 'cast' )
-        actors=[]
-        if c:
-            for a in c[:ACTORS_MAX]:
-                printE( ' Actors: ', a[ 'name' ] )
-                actors.append(a['name'])
-                
-        #EXTRA DATA thetvdb
-        chaptertitle=''
-        title=data.get( 'title' )
-        if SEASON != False and CHAPTER != False and len(chaptertitle) == 0:
-            #printE( 'Search extradata: ', title, SEASON, CHAPTER )
-            exdata=tvdbid_extradata(title,SEASON,CHAPTER)
-            if exdata != False:
-                chaptertitle=exdata['chaptertitle']
-                if reldate.endswith('-06-15') and \
-                exdata['releasedate'] != False and \
-                len(exdata['releasedate']) > 0:
-                    reldate=exdata['releasedate']
-            
-        #Prepare data
-        MEDIADATA['title']=data.get( 'title' )
-        MEDIADATA['plot']=plot
-        MEDIADATA['plotshort']=plotshort
-        MEDIADATA['kind']=data.get( 'kind' )
-        MEDIADATA['releasedate']=reldate
-        MEDIADATA['year']=str(data.get( 'year' ))
-        director=data.get( 'director' )
-        if isinstance(director,list) and len(director)>0:
-            director=director[0]['name']
-        else:
-            director=''
-        MEDIADATA['director']=director
-        if SEASON != False:
-            MEDIADATA['season']=str( SEASON )
-        else:
-            MEDIADATA['season']=''
-        if CHAPTER != False:
-            MEDIADATA['chapter']=str( CHAPTER )
-        else:
-            MEDIADATA['chapter']=''
-        MEDIADATA['mpaa']=data.get( 'mpaa' )
-        MEDIADATA['rating']=data.get( 'rating' )
-        MEDIADATA['votes']=str(data.get( 'votes' ))
-        MEDIADATA['genres']=','.join(data.get( 'genres' ))
-        MEDIADATA['actors']=','.join(actors)
-        MEDIADATA['urlposter']=data.get('cover url')
-        #chaptertitle
-        MEDIADATA['chaptertitle']=chaptertitle
-    else:
-        printE('IMDB No data.')
-        
-##FILMAFFINITY
+    ##TEST
+    if G_GETDATAFROM == 'test':
+        printE('##')
+        printE('TESTING Filename: ', FILENAME)
+        printE('TESTING Search Title: ', SEARCHTITLE)
 
-elif G_GETDATAFROM == 'filmaffinity':
-    dataid = False
-    
-    if len(G_GETDATAFROM_ID) > 0:
-        dataid=G_GETDATAFROM_ID
-        printE( 'FilmAffinityID(forced): ' + dataid )
-    else:
-        if SEASON != False:
-            SEARCHTITLE += ' ' + str( SEASON ) + 'x' + str( CHAPTER ) + ' serie '
-        
-        #forced searchstring
-        if G_FSEARCHSTRING:
-            if SEASON != False:
-                G_FSEARCHSTRING += ' serie '
-            printE( 'Forced Search Title: ', G_FSEARCHSTRING )
-            SEARCHTITLE=G_FSEARCHSTRING
-        
-        printE( 'FILMAFFINITY Search Title: ', SEARCHTITLE )
-        searchdata = searchTitle( SEARCHTITLE, 'filmaffinity.com' )
+    ##IMDB
+    elif G_GETDATAFROM == 'imdb':
+        imdbid = False
         url=False
         
-        if searchdata != False and G_INTERACTIVE:
-            printE( '##INTERACTIVE' )
-            printE( '##LINKS' )
-            url=interactiveShow(searchdata,G_INTERACTIVE_SET)
-        elif searchdata != False:
-            printE( '##LINKS' )
-            for d in searchdata:
-                printE( 'Title: ' + d[ 'title' ] )
-                printE( 'URL: ' + d[ 'url' ] )
-                printE( 'Abstract: ' + d[ 'abstract' ] )
-                dataid = extractFilmAffinityID( d[ 'url' ] )
-                if dataid != False:
+        if len(G_GETDATAFROM_ID) > 0:
+            imdbid=G_GETDATAFROM_ID
+            printE( 'IMDBid(forced): ' + imdbid )
+        else:
+            if SEASON != False:
+                SEARCHTITLE += ' ' + str( SEASON ) + 'x' + str( CHAPTER ) + ' serie '
+            
+            #forced searchstring
+            if G_FSEARCHSTRING:
+                if SEASON != False:
+                    G_FSEARCHSTRING += ' serie '
+                printE( 'Forced Search Title: ', G_FSEARCHSTRING )
+                SEARCHTITLE=G_FSEARCHSTRING
+            
+            printE( 'IMDB Search Title: ', SEARCHTITLE )
+            searchdata = searchTitle( SEARCHTITLE )
+            
+            if searchdata != False and G_INTERACTIVE:
+                printE( '##INTERACTIVE' )
+                printE( '##LINKS' )
+                url=interactiveShow(searchdata,G_INTERACTIVE_SET)
+            elif searchdata != False:
+                printE( '##LINKS' )
+                for d in searchdata:
+                    printE( 'Title: ' + d[ 'title' ] )
+                    printE( 'URL: ' + d[ 'url' ] )
+                    printE( 'Abstract: ' + d[ 'abstract' ] )
                     url=d[ 'url' ]
                     break
-        else:
-            printE( 'Search without data.' )
-    
-    if url:
-        dataid = extractFilmAffinityID(url)
-        printE( 'FilmAffinityID: ' + dataid )
+            else:
+                printE( 'Search without data.' )
         
-    #with dataid
-    
-    if dataid:
-        printE( 'Get FilmAffinity data: ', dataid )
-        service = python_filmaffinity.FilmAffinity(lang=G_LANG)
-        data = service.get_movie(id=dataid)
-        #printE('FilmAffinity result: ',data)
-        #printE('FilmAffinity result: ',data.keys())
-        
-        if data:
-            title=re.sub('\(.*?\)', '', data[ 'title' ]).strip()
-            printE( 'Title: ', title )
-            printE( 'Plot: ', data['description'] )
-            printE( 'Plot Short: ', '' )
-            printE( 'Year: ', data['year'] )
+        if url:
+            imdbid = extractIMDBID(url)
+            if imdbid != False:
+                printE( 'IMDBid: ' + imdbid )
             
+        #With IMDBid get data
+        if imdbid != False:
+            printE( 'Get IMDB data: ', imdbid )
+            data = getIMDBData( imdbid )
+            printE( 'Title: ', data.get( 'title' ) )
+            printE( 'Plots list: ', data.get( 'plot' ) )
+            plot=imdb_getPlot(data.get( 'plot' ))
+            printE( 'Plot: ', plot )
+            plotshort=imdb_getPlotShort(data.get( 'plot' ))
+            printE( 'Plot Short: ', plotshort )
+            printE( 'Year: ', data.get( 'year' ) )
             #kind; string; one in ('movie', 'tv series', 'tv mini series', 'video game', 'video movie', 'tv movie', 'episode')
-            kind=''
-            if isinstance(data['genre'],list):
-                if 'erie' in str(data['genre']):
-                    kind='tv serie'
-                else:
-                    kind='movie'
-            printE( 'Kind: ', kind )
-            
-            #TODO: middle of year
-            reldate=data['year']+'-06-15'
-            printE( 'Release Date: ', reldate )
-            
-            c = data['directors']
-            director=''
-            if c and isinstance(c,list):
-                a=re.sub('\(.*?\)', '', c[0]).strip()
-                printE( 'Director: ', a )
-                director=a
-            
-            c = data['actors']
+            printE( 'Kind: ', data.get( 'kind' ) )
+            printE( 'Release Date A: ', data.get( 'release_date' ) )
+            if data.has_key('release dates'):
+                reldate=imdb_getReleaseDate( data['release dates'] )
+                printE( 'Release Date B: ', reldate )
+            else:
+                #TODO middle of year
+                reldate=str(data.get( 'year' ))+'-06-15'
+                printE( 'Release Date C: ', reldate )
+            c = data.get( 'cast' )
             actors=[]
-            if c and isinstance(c,list):
+            if c:
                 for a in c[:ACTORS_MAX]:
-                    a=re.sub('\(.*?\)', '', a).strip()
-                    printE( ' Actors: ', a)
-                    actors.append(a)
-            
-            c = data['genre']
-            genres=[]
-            if c and isinstance(c,list):
-                for a in c[:10]:
-                    printE( ' Genres: ', a )
-                    genres.append(a)
-            
+                    printE( ' Actors: ', a[ 'name' ] )
+                    actors.append(a['name'])
+                    
             #EXTRA DATA thetvdb
             chaptertitle=''
+            title=data.get( 'title' )
             if SEASON != False and CHAPTER != False and len(chaptertitle) == 0:
                 #printE( 'Search extradata: ', title, SEASON, CHAPTER )
                 exdata=tvdbid_extradata(title,SEASON,CHAPTER)
@@ -1143,14 +1088,19 @@ elif G_GETDATAFROM == 'filmaffinity':
                     exdata['releasedate'] != False and \
                     len(exdata['releasedate']) > 0:
                         reldate=exdata['releasedate']
-            
+                
             #Prepare data
-            MEDIADATA['title']=title
-            MEDIADATA['plot']=data[ 'description' ]
-            MEDIADATA['plotshort']=''
-            MEDIADATA['kind']=kind
+            MEDIADATA['title']=data.get( 'title' )
+            MEDIADATA['plot']=plot
+            MEDIADATA['plotshort']=plotshort
+            MEDIADATA['kind']=data.get( 'kind' )
             MEDIADATA['releasedate']=reldate
-            MEDIADATA['year']=data['year']
+            MEDIADATA['year']=str(data.get( 'year' ))
+            director=data.get( 'director' )
+            if isinstance(director,list) and len(director)>0:
+                director=director[0]['name']
+            else:
+                director=''
             MEDIADATA['director']=director
             if SEASON != False:
                 MEDIADATA['season']=str( SEASON )
@@ -1160,323 +1110,472 @@ elif G_GETDATAFROM == 'filmaffinity':
                 MEDIADATA['chapter']=str( CHAPTER )
             else:
                 MEDIADATA['chapter']=''
-            MEDIADATA['mpaa']=''
-            MEDIADATA['rating']=data['rating']
-            MEDIADATA['votes']=data['votes']
-            MEDIADATA['genres']=','.join(genres)
+            MEDIADATA['mpaa']=data.get( 'mpaa' )
+            MEDIADATA['rating']=data.get( 'rating' )
+            MEDIADATA['votes']=str(data.get( 'votes' ))
+            MEDIADATA['genres']=','.join(data.get( 'genres' ))
             MEDIADATA['actors']=','.join(actors)
-            MEDIADATA['urlposter']=data['poster']
-            #episodeName chaptertitle
+            MEDIADATA['urlposter']=data.get('cover url')
+            #chaptertitle
             MEDIADATA['chaptertitle']=chaptertitle
         else:
-            printE('FilmAffinity No data.')
-
-#OMDB
-
-elif G_GETDATAFROM == 'omdb':
-    dataid = False
-    if len(G_GETDATAFROM_KEY) == 0:
-        printE('No valid apikey for OMDB')
-        exit(1)
-    
-    if len(G_GETDATAFROM_ID) > 0:
-        dataid=G_GETDATAFROM_ID
-        printE( 'OMDB(forced): ' + dataid )
-    else:
-        if SEASON != False:
-            SEARCHTITLE += ' ' + str( SEASON ) + 'x' + str( CHAPTER ) + ' serie '
+            printE('IMDB No data.')
             
-        #forced searchstring
-        if G_FSEARCHSTRING:
+    ##FILMAFFINITY
+
+    elif G_GETDATAFROM == 'filmaffinity':
+        dataid = False
+        
+        if len(G_GETDATAFROM_ID) > 0:
+            dataid=G_GETDATAFROM_ID
+            printE( 'FilmAffinityID(forced): ' + dataid )
+        else:
             if SEASON != False:
-                G_FSEARCHSTRING += ' serie '
-            printE( 'Forced Search Title: ', G_FSEARCHSTRING )
-            SEARCHTITLE=G_FSEARCHSTRING
+                SEARCHTITLE += ' ' + str( SEASON ) + 'x' + str( CHAPTER ) + ' serie '
+            
+            #forced searchstring
+            if G_FSEARCHSTRING:
+                if SEASON != False:
+                    G_FSEARCHSTRING += ' serie '
+                printE( 'Forced Search Title: ', G_FSEARCHSTRING )
+                SEARCHTITLE=G_FSEARCHSTRING
+            
+            printE( 'FILMAFFINITY Search Title: ', SEARCHTITLE )
+            searchdata = searchTitle( SEARCHTITLE, 'filmaffinity.com' )
+            url=False
+            
+            if searchdata != False and G_INTERACTIVE:
+                printE( '##INTERACTIVE' )
+                printE( '##LINKS' )
+                url=interactiveShow(searchdata,G_INTERACTIVE_SET)
+            elif searchdata != False:
+                printE( '##LINKS' )
+                for d in searchdata:
+                    printE( 'Title: ' + d[ 'title' ] )
+                    printE( 'URL: ' + d[ 'url' ] )
+                    printE( 'Abstract: ' + d[ 'abstract' ] )
+                    dataid = extractFilmAffinityID( d[ 'url' ] )
+                    if dataid != False:
+                        url=d[ 'url' ]
+                        break
+            else:
+                printE( 'Search without data.' )
         
-        printE( 'OMDB Search Title: ', SEARCHTITLE )
-        searchdata = searchTitle( SEARCHTITLE, 'imdb.com' )
-        url=False
+        if url:
+            dataid = extractFilmAffinityID(url)
+            printE( 'FilmAffinityID: ' + dataid )
+            
+        #with dataid
         
-        if searchdata != False and G_INTERACTIVE:
-            printE( '##INTERACTIVE' )
-            printE( '##LINKS' )
-            url=interactiveShow(searchdata,G_INTERACTIVE_SET)
-        elif searchdata != False:
-            printE( '##LINKS' )
-            for d in searchdata:
-                printE( 'Title: ' + d[ 'title' ] )
-                printE( 'URL: ' + d[ 'url' ] )
-                printE( 'Abstract: ' + d[ 'abstract' ] )
-                url=d[ 'url' ]
-                break
+        if dataid:
+            printE( 'Get FilmAffinity data: ', dataid )
+            service = python_filmaffinity.FilmAffinity(lang=G_LANG)
+            data = service.get_movie(id=dataid)
+            #printE('FilmAffinity result: ',data)
+            #printE('FilmAffinity result: ',data.keys())
+            
+            if data:
+                title=re.sub('\(.*?\)', '', data[ 'title' ]).strip()
+                printE( 'Title: ', title )
+                printE( 'Plot: ', data['description'] )
+                printE( 'Plot Short: ', '' )
+                printE( 'Year: ', data['year'] )
+                
+                #kind; string; one in ('movie', 'tv series', 'tv mini series', 'video game', 'video movie', 'tv movie', 'episode')
+                kind=''
+                if isinstance(data['genre'],list):
+                    if 'erie' in str(data['genre']):
+                        kind='tv serie'
+                    else:
+                        kind='movie'
+                printE( 'Kind: ', kind )
+                
+                #TODO: middle of year
+                reldate=data['year']+'-06-15'
+                printE( 'Release Date: ', reldate )
+                
+                c = data['directors']
+                director=''
+                if c and isinstance(c,list):
+                    a=re.sub('\(.*?\)', '', c[0]).strip()
+                    printE( 'Director: ', a )
+                    director=a
+                
+                c = data['actors']
+                actors=[]
+                if c and isinstance(c,list):
+                    for a in c[:ACTORS_MAX]:
+                        a=re.sub('\(.*?\)', '', a).strip()
+                        printE( ' Actors: ', a)
+                        actors.append(a)
+                
+                c = data['genre']
+                genres=[]
+                if c and isinstance(c,list):
+                    for a in c[:10]:
+                        printE( ' Genres: ', a )
+                        genres.append(a)
+                
+                #EXTRA DATA thetvdb
+                chaptertitle=''
+                if SEASON != False and CHAPTER != False and len(chaptertitle) == 0:
+                    #printE( 'Search extradata: ', title, SEASON, CHAPTER )
+                    exdata=tvdbid_extradata(title,SEASON,CHAPTER)
+                    if exdata != False:
+                        chaptertitle=exdata['chaptertitle']
+                        if reldate.endswith('-06-15') and \
+                        exdata['releasedate'] != False and \
+                        len(exdata['releasedate']) > 0:
+                            reldate=exdata['releasedate']
+                
+                #Prepare data
+                MEDIADATA['title']=title
+                MEDIADATA['plot']=data[ 'description' ]
+                MEDIADATA['plotshort']=''
+                MEDIADATA['kind']=kind
+                MEDIADATA['releasedate']=reldate
+                MEDIADATA['year']=data['year']
+                MEDIADATA['director']=director
+                if SEASON != False:
+                    MEDIADATA['season']=str( SEASON )
+                else:
+                    MEDIADATA['season']=''
+                if CHAPTER != False:
+                    MEDIADATA['chapter']=str( CHAPTER )
+                else:
+                    MEDIADATA['chapter']=''
+                MEDIADATA['mpaa']=''
+                MEDIADATA['rating']=data['rating']
+                MEDIADATA['votes']=data['votes']
+                MEDIADATA['genres']=','.join(genres)
+                MEDIADATA['actors']=','.join(actors)
+                MEDIADATA['urlposter']=data['poster']
+                #episodeName chaptertitle
+                MEDIADATA['chaptertitle']=chaptertitle
+            else:
+                printE('FilmAffinity No data.')
+
+    #OMDB
+
+    elif G_GETDATAFROM == 'omdb':
+        dataid = False
+        if len(G_GETDATAFROM_KEY) == 0:
+            printE('No valid apikey for OMDB')
+            exit(1)
+        
+        if len(G_GETDATAFROM_ID) > 0:
+            dataid=G_GETDATAFROM_ID
+            printE( 'OMDB(forced): ' + dataid )
         else:
-            printE( 'Search without data.' )
-    
-    if url:
-        dataid = extractIMDBID(url)
-        if dataid!=False:
-            printE( 'IMDBid: '+dataid )
-        
-    #with dataid
-    
-    if dataid:
-        printE( 'Get OMDB data: ', dataid )
-        omdb.set_default('apikey', G_GETDATAFROM_KEY)
-        data=omdb.imdbid('tt'+str(dataid).replace( 'tt', '' ))
-        printE('OMDB result: ',data.get('title'))
-        
-        if data:
-            printE( 'Title: ', data.get('title') )
-            printE( 'Plot: ', data.get('plot') )
-            printE( 'Plot Short: ', '' )
-            printE( 'Year: ', data.get('year') )
-            printE( 'Genre: ', data.get('genre') )
-            printE( 'actors: ', data.get('actors') )
-            
-            #kind; string; one in ('movie', 'tv series', 'tv mini series', 'video game', 'video movie', 'tv movie', 'episode')
-            kind=data.get('type')
-            printE( 'Kind: ', kind )
-            
-            reldate=omdb_getReleaseDate(data.get('released'))
-            #TODO: middle of year
-            if reldate == False or len(reldate) == 0:
-                reldate=data.get('year')+'-06-15'
-            printE( 'Release Date: ', reldate )
-            
-            director=data.get('director')
-            
-            actors=data.get('actors')
-            
-            genres=data.get('genre')
-            
-            #Prepare data
-            MEDIADATA['title']=data.get('title')
-            MEDIADATA['plot']=data.get('plot')
-            MEDIADATA['plotshort']=''
-            MEDIADATA['kind']=kind
-            MEDIADATA['releasedate']=reldate
-            MEDIADATA['year']=data.get('year')
-            MEDIADATA['director']=director
             if SEASON != False:
-                MEDIADATA['season']=str( SEASON )
-            else:
-                MEDIADATA['season']=''
-            if CHAPTER != False:
-                MEDIADATA['chapter']=str( CHAPTER )
-            else:
-                MEDIADATA['chapter']=''
-            MEDIADATA['chaptertitle']=''
-            MEDIADATA['mpaa']=data.get('rated')
-            MEDIADATA['rating']=data.get('imdb_rating')
-            MEDIADATA['votes']=data.get('imdb_votes')
-            MEDIADATA['genres']=genres
-            MEDIADATA['actors']=actors
-            MEDIADATA['urlposter']=data.get('poster')
-        else:
-            printE('OMDB No data.')
-
-#TheTVDB
-
-elif G_GETDATAFROM == 'thetvdb':
-    dataid = False
-    title = SEARCHTITLE
-    
-    if len(G_GETDATAFROM_KEY) == 0:
-        printE('No valid apikey for TheTVDB')
-        #exit(1)
-    
-    if len(G_GETDATAFROM_ID) > 0:
-        dataid=G_GETDATAFROM_ID
-        printE( 'TheTVDB(forced): ' + dataid )
-    else:
-        if SEASON != False:
-            SEARCHTITLE += ' ' + str( SEASON ) + 'x' + str( CHAPTER ) + ' serie '
+                SEARCHTITLE += ' ' + str( SEASON ) + 'x' + str( CHAPTER ) + ' serie '
+                
+            #forced searchstring
+            if G_FSEARCHSTRING:
+                if SEASON != False:
+                    G_FSEARCHSTRING += ' serie '
+                printE( 'Forced Search Title: ', G_FSEARCHSTRING )
+                SEARCHTITLE=G_FSEARCHSTRING
             
-        #forced searchstring
-        if G_FSEARCHSTRING:
+            printE( 'OMDB Search Title: ', SEARCHTITLE )
+            searchdata = searchTitle( SEARCHTITLE, 'imdb.com' )
+            url=False
+            
+            if searchdata != False and G_INTERACTIVE:
+                printE( '##INTERACTIVE' )
+                printE( '##LINKS' )
+                url=interactiveShow(searchdata,G_INTERACTIVE_SET)
+            elif searchdata != False:
+                printE( '##LINKS' )
+                for d in searchdata:
+                    printE( 'Title: ' + d[ 'title' ] )
+                    printE( 'URL: ' + d[ 'url' ] )
+                    printE( 'Abstract: ' + d[ 'abstract' ] )
+                    url=d[ 'url' ]
+                    break
+            else:
+                printE( 'Search without data.' )
+        
+        if url:
+            dataid = extractIMDBID(url)
+            if dataid!=False:
+                printE( 'IMDBid: '+dataid )
+            
+        #with dataid
+        
+        if dataid:
+            printE( 'Get OMDB data: ', dataid )
+            omdb.set_default('apikey', G_GETDATAFROM_KEY)
+            data=omdb.imdbid('tt'+str(dataid).replace( 'tt', '' ))
+            printE('OMDB result: ',data.get('title'))
+            
+            if data:
+                printE( 'Title: ', data.get('title') )
+                printE( 'Plot: ', data.get('plot') )
+                printE( 'Plot Short: ', '' )
+                printE( 'Year: ', data.get('year') )
+                printE( 'Genre: ', data.get('genre') )
+                printE( 'actors: ', data.get('actors') )
+                
+                #kind; string; one in ('movie', 'tv series', 'tv mini series', 'video game', 'video movie', 'tv movie', 'episode')
+                kind=data.get('type')
+                printE( 'Kind: ', kind )
+                
+                reldate=omdb_getReleaseDate(data.get('released'))
+                #TODO: middle of year
+                if reldate == False or len(reldate) == 0:
+                    reldate=data.get('year')+'-06-15'
+                printE( 'Release Date: ', reldate )
+                
+                director=data.get('director')
+                
+                actors=data.get('actors')
+                
+                genres=data.get('genre')
+                
+                #Prepare data
+                MEDIADATA['title']=data.get('title')
+                MEDIADATA['plot']=data.get('plot')
+                MEDIADATA['plotshort']=''
+                MEDIADATA['kind']=kind
+                MEDIADATA['releasedate']=reldate
+                MEDIADATA['year']=data.get('year')
+                MEDIADATA['director']=director
+                if SEASON != False:
+                    MEDIADATA['season']=str( SEASON )
+                else:
+                    MEDIADATA['season']=''
+                if CHAPTER != False:
+                    MEDIADATA['chapter']=str( CHAPTER )
+                else:
+                    MEDIADATA['chapter']=''
+                MEDIADATA['chaptertitle']=''
+                MEDIADATA['mpaa']=data.get('rated')
+                MEDIADATA['rating']=data.get('imdb_rating')
+                MEDIADATA['votes']=data.get('imdb_votes')
+                MEDIADATA['genres']=genres
+                MEDIADATA['actors']=actors
+                MEDIADATA['urlposter']=data.get('poster')
+            else:
+                printE('OMDB No data.')
+
+    #TheTVDB
+
+    elif G_GETDATAFROM == 'thetvdb':
+        dataid = False
+        title = SEARCHTITLE
+        
+        if len(G_GETDATAFROM_KEY) == 0:
+            printE('No valid apikey for TheTVDB')
+            #exit(1)
+        
+        if len(G_GETDATAFROM_ID) > 0:
+            dataid=G_GETDATAFROM_ID
+            printE( 'TheTVDB(forced): ', dataid )
+        else:
             if SEASON != False:
-                G_FSEARCHSTRING += ' serie '
-            printE( 'Forced Search Title: ', G_FSEARCHSTRING )
-            SEARCHTITLE=G_FSEARCHSTRING
-        
-        printE( 'TheTVDB Search Title: ', SEARCHTITLE )
-        searchdata = searchTitle( SEARCHTITLE, 'thetvdb.com' )
-        url=False
-        
-        if searchdata != False and G_INTERACTIVE:
-            printE( '##INTERACTIVE' )
-            printE( '##LINKS' )
-            url=interactiveShow(searchdata,G_INTERACTIVE_SET)
-        elif searchdata != False:
-            printE( '##LINKS' )
-            for d in searchdata:
-                printE( 'Title: ' + d[ 'title' ] )
-                printE( 'URL: ' + d[ 'url' ] )
-                printE( 'Abstract: ' + d[ 'abstract' ] )
-                url=d[ 'url' ]
-                #TODO clean name
-                title=d[ 'title' ].split('(')[0].split(':')[0]
-                break
-        else:
-            printE( 'Search without data.' )
-    
-    if url:
-        dataid = extractTheTVDBID(url)
-        if dataid!=False:
-            printE( 'TheTVDB: ',dataid,title )
-    
-    #with dataid
-    
-    if dataid:
-        printE( 'Get TheTVDB data: ', dataid, title )
-        # apikey G_GETDATAFROM_KEY)
-        #TODO banners = True
-        t = tvdb_api.Tvdb(language=G_LANG)
-        data = t[title]
-        #printE('TheTVDB result: ',data.data.keys())
-        printE('TheTVDB result: ',data.data)
-        
-        if data:
-            printE( 'Title: ', data['seriesName'] )
-            printE( 'Plot: ', data['overview'] )
-            printE( 'Plot Short: ', '' )
-            printE( 'Year: ', data['firstAired'].split('-')[0] )
+                SEARCHTITLE += ' ' + str( SEASON ) + 'x' + str( CHAPTER ) + ' serie '
+                
+            #forced searchstring
+            if G_FSEARCHSTRING:
+                if SEASON != False:
+                    G_FSEARCHSTRING += ' serie '
+                printE( 'Forced Search Title: ', G_FSEARCHSTRING )
+                SEARCHTITLE=G_FSEARCHSTRING
             
-            c = data['genre']
-            genres=[]
-            if c and isinstance(c,list):
-                for a in c[:10]:
-                    printE( ' Genres: ', a )
-                    genres.append(a)
+            printE( 'TheTVDB Search Title: ', SEARCHTITLE )
+            searchdata = searchTitle( SEARCHTITLE, 'thetvdb.com' )
+            url=False
             
-            #kind; string; one in ('movie', 'tv series', 'tv mini series', 'video game', 'video movie', 'tv movie', 'episode')
-            kind='tv serie'
-            printE( 'Kind: ', kind )
-            
-            reldate=omdb_getReleaseDate(data['firstAired'])
-            #TODO: middle of year
-            if reldate == False or len(reldate) == 0:
-                reldate=data['firstAired']
-            printE( 'Release Date: ', reldate )
-            
-            director=''
-            actors=''
-            if SEASON != False and CHAPTER != False:
-                chaptername=data[SEASON][CHAPTER]['episodeName']
+            if searchdata != False and G_INTERACTIVE:
+                printE( '##INTERACTIVE' )
+                printE( '##LINKS' )
+                url=interactiveShow(searchdata,G_INTERACTIVE_SET)
+            elif searchdata != False:
+                printE( '##LINKS' )
+                for d in searchdata:
+                    printE( 'Title: ' + d[ 'title' ] )
+                    printE( 'URL: ' + d[ 'url' ] )
+                    printE( 'Abstract: ' + d[ 'abstract' ] )
+                    url=d[ 'url' ]
+                    #TODO clean name
+                    title=d[ 'title' ].split('(')[0].split(':')[0]
+                    break
             else:
-                chaptername=''
+                printE( 'Search without data.' )
+        
+        if url:
+            dataid = extractTheTVDBID(url)
+            if dataid!=False:
+                printE( 'TheTVDB: ',dataid,title )
+        
+        #with dataid
+        
+        if dataid:
+            printE( 'Get TheTVDB data: ', dataid, title )
+            # apikey G_GETDATAFROM_KEY)
+            #TODO banners = True
+            t = tvdb_api.Tvdb(language=G_LANG)
+            data = t[title]
+            #printE('TheTVDB result: ',data.data.keys())
+            #printE('TheTVDB result: ',data.data)
             
-            #Prepare data
-            MEDIADATA['title']=data['seriesName']
-            MEDIADATA['plot']=data['overview']
-            MEDIADATA['plotshort']=''
-            MEDIADATA['kind']=kind
-            MEDIADATA['releasedate']=reldate
-            MEDIADATA['year']=data['firstAired'].split('-')[0]
-            MEDIADATA['director']=director
-            if SEASON != False:
-                MEDIADATA['season']=str( SEASON )
+            if data:
+                printE( 'Title: ', data['seriesName'] )
+                printE( 'Plot: ', data['overview'] )
+                printE( 'Plot Short: ', '' )
+                printE( 'Year: ', data['firstAired'].split('-')[0] )
+                
+                c = data['genre']
+                genres=[]
+                if c and isinstance(c,list):
+                    for a in c[:10]:
+                        printE( ' Genres: ', a )
+                        genres.append(a)
+                
+                #kind; string; one in ('movie', 'tv series', 'tv mini series', 'video game', 'video movie', 'tv movie', 'episode')
+                kind='tv serie'
+                printE( 'Kind: ', kind )
+                
+                reldate=omdb_getReleaseDate(data['firstAired'])
+                #TODO: middle of year
+                if reldate == False or len(reldate) == 0:
+                    reldate=data['firstAired']
+                printE( 'Release Date: ', reldate )
+                
+                director=''
+                actors=''
+                if SEASON != False and CHAPTER != False:
+                    chaptername=data[SEASON][CHAPTER]['episodeName']
+                else:
+                    chaptername=''
+                
+                #Prepare data
+                MEDIADATA['title']=data['seriesName']
+                MEDIADATA['plot']=data['overview']
+                MEDIADATA['plotshort']=''
+                MEDIADATA['kind']=kind
+                MEDIADATA['releasedate']=reldate
+                MEDIADATA['year']=data['firstAired'].split('-')[0]
+                MEDIADATA['director']=director
+                if SEASON != False:
+                    MEDIADATA['season']=str( SEASON )
+                else:
+                    MEDIADATA['season']=''
+                if CHAPTER != False:
+                    MEDIADATA['chapter']=str( CHAPTER )
+                else:
+                    MEDIADATA['chapter']=''
+                MEDIADATA['chaptertitle']=''
+                MEDIADATA['mpaa']=data['rating']
+                MEDIADATA['rating']=data['siteRating']
+                MEDIADATA['votes']=data['siteRatingCount']
+                MEDIADATA['genres']=','.join(genres)
+                MEDIADATA['actors']=actors
+                MEDIADATA['urlposter']=''
+                #episodeName chaptertitle
+                MEDIADATA['chaptertitle']=chaptername
             else:
-                MEDIADATA['season']=''
-            if CHAPTER != False:
-                MEDIADATA['chapter']=str( CHAPTER )
+                printE('TheTVDB No data.')
+
+    #END ACTIONS
+
+    if G_JSON:
+        print( json.dumps(MEDIADATA, indent=4, sort_keys=True, ensure_ascii=False) )
+        exit()
+
+    #ACTIONS ON FILE
+
+    if os.path.isfile( FILE ) == False:
+        printE('File not found')
+    elif 'title' in MEDIADATA.keys():
+        nfile=FILE
+        #-r rename
+        if G_RENAME:
+            printE('##Renaming')
+            if 'movie' in MEDIADATA['kind']:
+                FORMAT=G_RENAME_FORMAT_MOVIE
             else:
-                MEDIADATA['chapter']=''
-            MEDIADATA['chaptertitle']=''
-            MEDIADATA['mpaa']=data['rating']
-            MEDIADATA['rating']=data['siteRating']
-            MEDIADATA['votes']=data['siteRatingCount']
-            MEDIADATA['genres']=','.join(genres)
-            MEDIADATA['actors']=actors
-            MEDIADATA['urlposter']=''
-            #episodeName chaptertitle
-            MEDIADATA['chaptertitle']=chaptername
-        else:
-            printE('TheTVDB No data.')
-
-#END ACTIONS
-
-if G_JSON:
-    print( json.dumps(MEDIADATA, indent=4, sort_keys=True, ensure_ascii=False) )
-    exit()
-
-#ACTIONS ON FILE
-
-if os.path.isfile( FILE ) == False:
-    printE('File not found')
-elif 'title' in MEDIADATA.keys():
-    nfile=FILE
-    #-r rename
-    if G_RENAME:
-        printE('##Renaming')
-        if 'movie' in MEDIADATA['kind']:
-            FORMAT=G_RENAME_FORMAT_MOVIE
-        else:
-            FORMAT=G_RENAME_FORMAT_SERIE
-        printE('Format:', FORMAT)
-        NEWNAME=nameFormat(FORMAT,MEDIADATA)
-        #extension
-        filename, file_extension = os.path.splitext(nfile)
-        NEWNAME+=file_extension
-        printE('New Name:', NEWNAME)
-        nfile=os.path.join(os.path.dirname(FILE), NEWNAME).encode( "utf-8", errors="ignore")
-        if G_DRYRUN:
-            printE('DryRun Mode:', nfile)
-        else:
-            printE('Rename:', FILE, nfile)
-            a=nfile
+                FORMAT=G_RENAME_FORMAT_SERIE
+            printE('Format:', FORMAT)
+            NEWNAME=nameFormat(FORMAT,MEDIADATA).encode( "utf-8", errors="ignore")
+            #extension
+            filename, file_extension = os.path.splitext(nfile)
             try:
-                os.rename( FILE, a )
+                NEWNAME+=file_extension.encode( "utf-8", errors="ignore")
             except:
-                pass
-    
-    #-hl hardlink
-    if G_HARDLINK:
-        printE('##HardLink')
-        printE('Format:', G_HARDLINK)
-        NEWFOLDERFILE=nameFormat(G_HARDLINK,MEDIADATA).encode( "utf-8", errors="ignore")
-        printE('hardlink to:', NEWFOLDERFILE)
-        if G_DRYRUN:
-            printE('DryRun Mode:', NEWFOLDERFILE)
-        else:
-            NEWFOLDER=NEWFOLDERFILE
-            os.makedirs(NEWFOLDER, exist_ok=True)
-            if os.path.isdir( NEWFOLDER ):
-                printE('Folder Created:', NEWFOLDER)
-                nfile2=os.path.join(NEWFOLDER,os.path.basename(nfile))
-                #nfile2=NEWFOLDERFILE
+                NEWNAME+=file_extension
+            printE('New Name:', NEWNAME)
+            ufile=os.path.dirname(FILE).encode('UTF-8')
+            nfile=os.path.join(ufile, NEWNAME)
+            if G_DRYRUN:
+                printE('DryRun Mode:', nfile)
+            else:
+                printE('Rename:', FILE, nfile)
+                a=nfile
                 try:
-                    os.link( nfile, nfile2)
+                    os.rename( FILE, a )
                 except:
                     pass
-                if os.path.isfile(nfile2):
-                    printE('File hardlinked:', nfile2)
-                else:
-                    printE('Error hardlinking file:', nfile2)
+        
+        #-hl hardlink
+        if G_HARDLINK:
+            printE('##HardLink')
+            printE('Format:', G_HARDLINK)
+            NEWFOLDERFILE=nameFormat(G_HARDLINK,MEDIADATA).encode( "utf-8", errors="ignore")
+            printE('hardlink to:', NEWFOLDERFILE)
+            if G_DRYRUN:
+                printE('DryRun Mode:', NEWFOLDERFILE)
             else:
-                printE('Error creating folder:', NEWFOLDER)
+                NEWFOLDER=NEWFOLDERFILE
+                os.makedirs(NEWFOLDER, exist_ok=True)
+                if os.path.isdir( NEWFOLDER ):
+                    printE('Folder Created:', NEWFOLDER)
+                    try:
+                        ufile=os.path.basename(nfile).encode('UTF-8', errors="ignore")
+                    except:
+                        ufile=os.path.basename(nfile)
+                    printE('Hardlinking file:', NEWFOLDER,ufile)
+                    nfile2=os.path.join(NEWFOLDER,ufile)
+                    #nfile2=NEWFOLDERFILE
+                    try:
+                        os.link( nfile, nfile2)
+                    except:
+                        pass
+                    if os.path.isfile(nfile2):
+                        printE('File hardlinked:', nfile2)
+                    else:
+                        printE('Error hardlinking file:', nfile2)
+                else:
+                    printE('Error creating folder:', NEWFOLDER)
 
-    #-m move
-    elif G_MOVE:
-        printE('##Moving')
-        printE('Format:', G_MOVE)
-        NEWFOLDER=nameFormat(G_MOVE,MEDIADATA).encode( "utf-8", errors="ignore")
-        printE('Folder to move:', NEWFOLDER)
-        if G_DRYRUN:
-            printE('DryRun Mode:', NEWFOLDER)
-        else:
-            os.makedirs(NEWFOLDER, exist_ok=True)
-            if os.path.isdir(NEWFOLDER):
-                printE('Folder Created:', NEWFOLDER)
-                nfile2=os.path.join(NEWFOLDER,os.path.basename(nfile))
-                try:
-                    os.rename( nfile, nfile2)
-                except:
-                    pass
-                if os.path.isfile(nfile2):
-                    printE('File Moved:', nfile2)
-                else:
-                    printE('Error moving file:', nfile2)
+        #-m move
+        elif G_MOVE:
+            printE('##Moving')
+            printE('Format:', G_MOVE)
+            NEWFOLDER=nameFormat(G_MOVE,MEDIADATA).encode( "utf-8", errors="ignore")
+            printE('Folder to move:', NEWFOLDER)
+            if G_DRYRUN:
+                printE('DryRun Mode:', NEWFOLDER)
             else:
-                printE('Error creating folder:', NEWFOLDER)
+                os.makedirs(NEWFOLDER, exist_ok=True)
+                if os.path.isdir(NEWFOLDER):
+                    printE('Folder Created:', NEWFOLDER)
+                    try:
+                        ufile=os.path.basename(nfile).encode('UTF-8', errors="ignore")
+                    except:
+                        ufile=os.path.basename(nfile)
+                    printE('Movinf file:', NEWFOLDER,ufile)
+                    nfile2=os.path.join(NEWFOLDER,ufile)
+                    try:
+                        os.rename( nfile, nfile2)
+                    except:
+                        pass
+                    if os.path.isfile(nfile2):
+                        printE('File Moved:', nfile2)
+                    else:
+                        printE('Error moving file:', nfile2)
+                else:
+                    printE('Error creating folder:', NEWFOLDER)
     
+printE('#END#')
