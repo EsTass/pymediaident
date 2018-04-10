@@ -364,7 +364,26 @@ def is_tool(name):
 def printE(msg1, msg2='',msg3='',msg4='',msg5=''):
     global G_NOINFO
     if G_NOINFO == False:
-        print(msg1,msg2,msg3,msg4,msg5)
+        try:
+            print(msg1,msg2,msg3,msg4,msg5)
+        except:
+            a=encodeUTF8(msg1)
+            b=encodeUTF8(msg2)
+            c=encodeUTF8(msg3)
+            d=encodeUTF8(msg4)
+            e=encodeUTF8(msg5)
+            print(a,b,c,d,e)
+            
+
+def encodeUTF8( s ):
+    result=s
+    if isinstance(s,str) and len(s) > 0:
+        try:
+            result=s.encode( "utf-8", errors="ignore")
+        except:
+            pass
+    
+    return result
 
 def extractChapter( filename ):
     season = False
@@ -1082,9 +1101,10 @@ for FILE in FILELIST:
             if SEASON != False and CHAPTER != False and len(chaptertitle) == 0:
                 #printE( 'Search extradata: ', title, SEASON, CHAPTER )
                 exdata=tvdbid_extradata(title,SEASON,CHAPTER)
-                if exdata != False:
+                if exdata != False and 'chaptertitle' in exdata.keys():
                     chaptertitle=exdata['chaptertitle']
                     if reldate.endswith('-06-15') and \
+                    'releasedate' in exdata.keys() and \
                     exdata['releasedate'] != False and \
                     len(exdata['releasedate']) > 0:
                         reldate=exdata['releasedate']
@@ -1218,12 +1238,14 @@ for FILE in FILELIST:
                 
                 #EXTRA DATA thetvdb
                 chaptertitle=''
-                if SEASON != False and CHAPTER != False and len(chaptertitle) == 0:
+                if SEASON != False and CHAPTER != False and \
+                len(chaptertitle) == 0:
                     #printE( 'Search extradata: ', title, SEASON, CHAPTER )
                     exdata=tvdbid_extradata(title,SEASON,CHAPTER)
-                    if exdata != False:
+                    if exdata != False and 'chaptertitle' in exdata.keys():
                         chaptertitle=exdata['chaptertitle']
                         if reldate.endswith('-06-15') and \
+                        'releasedate' in exdata.keys() and \
                         exdata['releasedate'] != False and \
                         len(exdata['releasedate']) > 0:
                             reldate=exdata['releasedate']
