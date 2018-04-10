@@ -22,6 +22,7 @@ import array
 import subprocess
 import json
 import datetime
+import unicodedata
 #IMDBpy IMDB https://imdbpy.sourceforge.io/
 from imdb import IMDb
 #python_filmaffinity https://github.com/sergiormb/python_filmaffinity
@@ -31,10 +32,14 @@ import omdb
 #tvdb_api https://github.com/dbr/tvdb_api/
 import tvdb_api
 
+
 #CONFIGS
-VERSION='0.3'
+VERSION='0.4'
+#VERBOSE MODE -v
+G_DEBUG=False
 #remove extension from filename
 remove_extension = [ '.avi', '.mp4', '.mpeg', '.mkv', '.mpeg4', '.ogm' ]
+G_MEDIAEXCLUDEEXT = [ 'part','part.met','!qb','tmp','temp' ]
 #min filesize for media file (50mb)
 G_MEDIAMINSIZE = 50 * 1024 * 1024
 # web data from. imdb|filmaffinity
@@ -91,9 +96,11 @@ G_BADWORDSFILE=False
 MSG_OPTIONS = '''
 OPTIONS
  -h : help
+ -v : verbose mode
  -f FILETOIDENT : path to file to ident
  -fp FOLDER : path to folder to scan media files and ident
  -fps 50 : min file size to folder scan to use as media file
+ -fpee ext1,ext2 : scan folder exclude extensions ('part','part.met','!qb','tmp','temp')
  -es 'googler|ddgr|ducker' : external search
  -s imdb|filmaffinity|omdb|thetvdb : get data from
  -sid XXX : forced id for imdb|filmaffinity|omdb|thetvdb
@@ -176,23 +183,48 @@ G_BADWORDS=[ \
 
 def getFilesMedia(path):
     global G_MEDIAMINSIZE
+    global G_DEBUG
+    debug=G_DEBUG
     result = []
 
     printE('Get Files in folder:', path)
-    path = u''
+    path=encodeUTF8(path)
     path = os.path.abspath(path)
     
     if os.path.exists( path ):
+        if debug: printE( 'Folder exist: ', path )
         for folder, subfolders, files in os.walk(path):
+            if debug: printE( 'Files in folder: ', path, len(files) )
             for file in files:
                 filePath = os.path.join(folder, file)
+                if debug: printE( 'Check File: ', filePath )
                 try:
                     if G_MEDIAMINSIZE<=os.path.getsize(filePath) \
-                    and os.path.basename(__file__) != file:
+                    and os.path.basename(__file__) != file \
+                    and checkFileExtensions(file)==False:
                         result.append(filePath)
+                    else:
+                        if debug: printE( 'Check File FAIL: ', filePath )
                 except:
+                    if debug: printE( 'Check File ERROR: ', filePath, result )
                     pass
     printE('Files finded:', len(result))
+    
+    return result
+
+def checkFileExtensions(file):
+    global G_MEDIAEXCLUDEEXT
+    result=False
+    global G_DEBUG
+    debug=G_DEBUG
+    
+    if debug: printE('Check file extension:', file)
+    for e in G_MEDIAEXCLUDEEXT:
+        e=encodeUTF8(e)
+        if  file.endswith( e ):
+            if debug: printE('Check file extension ENDSWITH:', file, e)
+            result=True
+            break
     
     return result
 
@@ -200,7 +232,8 @@ def getBadWordsFile(file):
     global G_BADWORDS
     result=False
     num=0
-    debug=False
+    global G_DEBUG
+    debug=G_DEBUG
     
     if os.path.isfile(file):
         printE('Loading BadWordsFile:', file)
@@ -221,8 +254,18 @@ def getBadWordsFile(file):
 
 def cleanFileName(file):
     global G_BADWORDS
-    FILENAMECLEAN=file
-    debug=False
+    global G_DEBUG
+    debug=G_DEBUG
+    if isinstance(file,str):
+        FILENAMECLEAN=file
+        FILENAME=file
+    else:
+        #FILENAMECLEAN=file.decode('UTF-8', 'surrogateescape')
+        #FILENAME=file.decode('UTF-8', 'surrogateescape')
+        FILENAMECLEAN=str(encodeUTF8(file),'UTF-8')
+        FILENAME=str(encodeUTF8(file),'UTF-8')
+    
+    if debug: printE( 'START Clean Filename: ', FILENAME )
     
     #EXTRACT YEAR
     #YEAR=re.search(r"\d{4}", FILENAME).group(1)
@@ -273,13 +316,15 @@ def cleanFileName(file):
     #[]
     FILENAMECLEAN=re.sub('\[.*?\]', '', FILENAMECLEAN)
     if debug: printE( 'File Clean []: ', FILENAMECLEAN )
-
+    
+    '''
     #domains A
     filter=r'(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)?[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$'
     f=re.sub(filter, '', FILENAMECLEAN, re.IGNORECASE)
     if len(f) > 5:
         FILENAMECLEAN=f
     if debug: printE( 'File Clean Domains A: ', FILENAMECLEAN )
+    '''
     
     #domains B
     filter=r'[a-zA-Z0-9]+\.(com|net|org)'
@@ -300,7 +345,8 @@ def cleanFileName(file):
     if debug: printE( 'File Clean bad words: ', FILENAMECLEAN )
 
     #remove all non alfanumeric chars
-    FILENAMECLEAN=re.sub(r'[^a-zA-Z0-9]', ' ',FILENAMECLEAN)
+    #FILENAMECLEAN=re.sub(r'[^a-zA-Z0-9]', ' ',FILENAMECLEAN, flags=re.UNICODE)
+    FILENAMECLEAN=re.sub(r'[\_\-\:\,\.=\?\¿\$\"\!]', ' ',FILENAMECLEAN, flags=re.UNICODE)
     if debug: printE( 'File Clean All except chars: ', FILENAMECLEAN )
 
     #extra .
@@ -318,25 +364,37 @@ def cleanFileName(file):
     #trim
     FILENAMECLEAN=FILENAMECLEAN.strip()
     
+    if debug: printE( 'END Clean Filename: ', FILENAMECLEAN )
+    
     return YEAR,CHAPTER,SEASON,CSREMOVE,FILENAMECLEAN
 
 def getParam( param ):
+    global G_DEBUG
     result=False
+    debug=G_DEBUG
     
     #PARAMS
     ARG = sys.argv
-    #printE( 'Number of arguments:', len(sys.argv), 'arguments.' )
-    #printE( 'Argument List:', str(sys.argv) )
+    ARG = list(map(os.fsencode, sys.argv))
+    if debug: printE( 'Number of arguments:', len(sys.argv), 'arguments.' )
+    if debug: printE( 'Argument List:', str(sys.argv) )
     next=False
     for a in ARG:
-        #printE( 'Check ARG:', str(a) )
+        try:
+            #, 'surrogateescape'
+            b=a.decode('UTF-8', 'surrogateescape')
+            b=str(encodeUTF8(b),'UTF-8')
+            a=b
+        except:
+            pass
+        if debug: printE( 'Check ARG:', a )
         if next:
             result=a
             break
         elif a == param:
-            #printE( '+ARG:', str(a),param )
-            #result=a.replace(param,'')
-            result=''
+            if debug: printE( '+ARG:', str(a),param )
+            if debug: result=a.replace(param,'')
+            result=u''
             next=True
     
     return result
@@ -365,14 +423,14 @@ def printE(msg1, msg2='',msg3='',msg4='',msg5=''):
     global G_NOINFO
     if G_NOINFO == False:
         try:
-            print(msg1,msg2,msg3,msg4,msg5)
-        except:
-            a=encodeUTF8(msg1)
-            b=encodeUTF8(msg2)
+            a=str(encodeUTF8(msg1),'UTF-8')
+            b=str(encodeUTF8(msg2),'UTF-8')
             c=encodeUTF8(msg3)
             d=encodeUTF8(msg4)
             e=encodeUTF8(msg5)
             print(a,b,c,d,e)
+        except:
+            print(msg1,msg2,msg3,msg4,msg5)
             
 
 def encodeUTF8( s ):
@@ -433,7 +491,8 @@ def extractChapter( filename ):
 
 def nameFormat(format,MEDIAINFO):
     result=''
-    debug=False
+    global G_DEBUG
+    debug=G_DEBUG
     #FORMATS
     #%title%
     #%year%
@@ -498,7 +557,8 @@ def interactiveShow(searchdata, defselection=False):
 
 def interactiveExist(url, urls):
     result=False
-    debug=False
+    global G_DEBUG
+    debug=G_DEBUG
     
     a=extractIMDBID(url)
     if a:
@@ -542,7 +602,12 @@ def searchTitle( title, extra='imdb.com' ):
             
     inlist.append(cmdapp)
     #cmd = cmdapp + ' -w imdb.com --json "' + str( title ) + '"'
-    cmd = cmdapp + ' --json "' + str( encodeUTF8( title ) ) + ' ' + extra + '"'
+    #cmd = cmdapp + ' --json "' + str( title ) + ' ' + extra + '"'
+    #cmd = cmdapp + ' --json "' + str( encodeUTF8( title ) ) + ' ' + extra + '"'
+    #cmd = cmdapp + ' --json "' + str( encodeUTF8( title ), 'UTF-8' ) + ' ' + extra + '"'
+    #cmd = cmdapp + ' --json "' + str( encodeUTF8( title ), 'ascii', 'ignore' ) + ' ' + extra + '"'
+    cmd = cmdapp + ' --json "' + remove_accents(title) + ' ' + extra + '"'
+    
     data=searchExtCMD(cmd)
     
     if data == False:
@@ -551,7 +616,7 @@ def searchTitle( title, extra='imdb.com' ):
                 cmdapp=s
                 inlist.append(cmdapp)
                 #cmd = cmdapp + ' -w imdb.com --json "' + str( title ) + '"'
-                cmd = cmdapp + ' --json "' + str( encodeUTF8( title ) ) + ' ' + extra + '"'
+                cmd = cmdapp + ' --json "' + remove_accents(title) + ' ' + extra + '"'
                 data=searchExtCMD(cmd)
                 if data != False:
                     break
@@ -563,6 +628,10 @@ def searchTitle( title, extra='imdb.com' ):
         printE( "Error NO Links: ", data)
         
     return result
+
+def remove_accents(input_str):
+    nfkd_form = unicodedata.normalize('NFKD', input_str)
+    return u"".join([c for c in nfkd_form if not unicodedata.combining(c)])
 
 def searchExtCMD( cmd ):
     data=False
@@ -799,6 +868,12 @@ if len(ARG) < 2 or getParam('-h') != False:
     FILE=False
     exit(0)
 
+#-v
+p=getParam('-v')
+if p != False:
+    printE('VERBOSE MODE')
+    G_DEBUG=True
+
 #-es
 p=getParam('-es')
 if p in CMDSEARCHLIST:
@@ -871,12 +946,6 @@ if p != False and len(p) > 0:
     printE('Hardlink to folder: ', p)
     G_HARDLINK=p
 
-#-fs
-p=getParam('-fs')
-if p != False and len(p) > 0:
-    printE('Search String: ', p)
-    G_FSEARCHSTRING=p
-
 #-i
 p=getParam('-i')
 if p != False:
@@ -888,6 +957,14 @@ p=getParam('-if')
 if p != False and len(p) > 0 and p.isdigit():
     printE('Interactive Mode select: ', p)
     G_INTERACTIVE_SET=int(p)
+
+#-fs TEXTSEARCH
+p=getParam('-fs')
+if p != False and len(p) > 0:
+    p2=p
+    p=encodeUTF8(p)
+    printE('Search String: ', p, p2)
+    G_FSEARCHSTRING=p
 
 #-f FILENAME
 FILE=False
@@ -913,13 +990,23 @@ if p != False and len(p) > 0:
     except:
         printE('ERROR:Folder to scan: ', p)
         FOLDERPATH=False
-        pass
+        exit()
 
 #-fps
 p=getParam('-fps')
 if p != False and len(p) > 0 and p.isdigit():
-    printE('Min file size to: ', p, 'Mb')
     G_MEDIAMINSIZE=int(p) * 1024 * 1024
+if FOLDERPATH:
+    printE('Min file size to: ', p, 'Mb')
+
+#-fpee
+p=getParam('-fpee')
+if p != False and len(p) > 0:
+    d=p.split(',')
+    for e in d:
+        G_MEDIAEXCLUDEEXT.append(e)
+if FOLDERPATH:
+    printE('Exclude extensions: ', ','.join(G_MEDIAEXCLUDEEXT))
 
 #-dr
 p=getParam('-dr')
@@ -981,8 +1068,11 @@ if G_FSEARCHSTRING:
     FILELIST.append(G_FSEARCHSTRING)
 elif FILE!=False:
     FILELIST.append(FILE)
-else:
+elif FOLDERPATH:
     FILELIST=getFilesMedia(FOLDERPATH)
+else:
+    print('No action detected.')
+    exit()
 
 #FILE ACTIONS
 
