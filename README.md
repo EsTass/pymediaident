@@ -1,4 +1,4 @@
-# pymediaident 0.2
+# pymediaident 0.3
 python media (movies, series) ident, rename and show json data. beta Version.
 ![pymediaident](https://raw.githubusercontent.com/EsTass/pymediaident/master/img/example.gif)
 
@@ -24,13 +24,15 @@ Renamer for media files trying to identify searching on web (googler,ddgr,ducker
  
 ## Usage
 ```
-pymediaident.py [options] [-f FILE|-fs Searchtext]
+pymediaident.py [options] [-f FILE|-fp PATH|-fs Searchtext]
 ```
 
 ### OPTIONS
 ```
  -h : help
  -f FILETOIDENT : path to file to ident
+ -fp FOLDER : path to folder to scan media files and ident
+ -fps 50 : min file size to folder scan to use as media file
  -es 'googler|ddgr|ducker' : external search
  -s imdb|filmaffinity|omdb|thetvdb : get data from
  -sid XXX : forced id for imdb|filmaffinity|omdb|thetvdb
@@ -39,10 +41,10 @@ pymediaident.py [options] [-f FILE|-fs Searchtext]
  -c USA : country for release date
  -r : rename
  -rfm "%title% (%year%, %director%)" : rename format movie
- -rfs "%title% %season%x%chapter%(%year%, %director%)" : rename format eries
+ -rfs "%title% %season%x%chapter%(%year%, %director%)" : rename format series
  -m "/path/%title%": move file to folder with format name 
  -hl "/path/%title%": hardlink file to folder with format name 
- --json : return only json data
+ --json : return onlyjson data
  -dr : dryrun, force not changes
  -i : interactive mode, select search result to assign
  -if X: force select X position of interactive mode
@@ -62,6 +64,11 @@ pymediaident.py [options] [-f FILE|-fs Searchtext]
  ```
  
  ### Examples
+ 
+ Search for files in ./Media with filesize >100Mb with imdb and rename with default formats:
+ ```
+ pymediaident.py -fp "./Media" -fps 100 -s imdb -r
+ ```
  
  Search for title 'The matrix' imdb and rename file to format "%title% (%year%, %director%)":
  ```
