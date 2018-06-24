@@ -6,6 +6,7 @@ python media (movies, series) ident, rename and show json data. beta Version.
 Renamer for media files trying to identify searching on web (googler,ddgr,ducker), getting data from IMDBpy, python_filmaffinity, OMDB, TheTVDB.
 
 ## Installation
+
 ### Dependencies
  - googler: https://pypi.python.org/pypi/googler
  - ddgr: https://github.com/jarun/ddgr
@@ -19,6 +20,25 @@ Renamer for media files trying to identify searching on web (googler,ddgr,ducker
  pip install googler IMDBpy python_filmaffinity omdb tvdb_api
  ```
  
+### Full Install on Arch
+
+Install needed by pymediaident
+```
+pacman -S python python-pip 
+yay/yaourt/pacaur -S ddgr ducker
+pip install googler IMDBpy python_filmaffinity omdb tvdb_api
+```
+Then install pymediaident
+```
+wget https://raw.githubusercontent.com/EsTass/pymediaident/master/pymediaident.py
+chmod +x pymediaident
+cp ./pymediaident.py /usr/sbin
+```
+Test all ok:
+```
+pymediaident.py -h
+```
+
  ### Download
   - direct download file: https://raw.githubusercontent.com/EsTass/pymediaident/master/pymediaident.py
  
