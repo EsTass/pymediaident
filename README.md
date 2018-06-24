@@ -32,7 +32,7 @@ Then install pymediaident
 ```
 wget https://raw.githubusercontent.com/EsTass/pymediaident/master/pymediaident.py
 chmod +x pymediaident
-cp ./pymediaident.py /usr/sbin
+cp ./pymediaident.py /usr/bin
 ```
 Test all ok:
 ```
