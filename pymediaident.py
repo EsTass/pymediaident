@@ -605,7 +605,7 @@ def searchTitle( title, extra='imdb.com' ):
     #cmd = cmdapp + ' --json "' + str( encodeUTF8( title ) ) + ' ' + extra + '"'
     #cmd = cmdapp + ' --json "' + str( encodeUTF8( title ), 'UTF-8' ) + ' ' + extra + '"'
     #cmd = cmdapp + ' --json "' + str( encodeUTF8( title ), 'ascii', 'ignore' ) + ' ' + extra + '"'
-    cmd = cmdapp + ' --json "' + str(remove_accents(title)) + ' ' + str(extra) + '"'
+    cmd = cmdapp + ' --json "' + str(remove_accents(title)) + ' ' + str(extra) + '" 2> /dev/null '
     
     data=searchExtCMD(cmd)
     
@@ -615,7 +615,7 @@ def searchTitle( title, extra='imdb.com' ):
                 cmdapp=s
                 inlist.append(cmdapp)
                 #cmd = cmdapp + ' -w imdb.com --json "' + str( title ) + '"'
-                cmd = cmdapp + ' --json "' + remove_accents(title) + ' ' + extra + '"'
+                cmd = cmdapp + ' --json "' + str( remove_accents(title) ) + ' ' + extra + '" 2> /dev/null '
                 data=searchExtCMD(cmd)
                 if data != False:
                     break
