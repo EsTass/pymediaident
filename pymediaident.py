@@ -11,6 +11,7 @@ https://github.com/EsTass/pymediaident
 '''
 
 #IMPORTS
+'''
 import sys
 import os
 import unicodedata
@@ -30,10 +31,78 @@ import python_filmaffinity
 import omdb
 #tvdb_api https://github.com/dbr/tvdb_api/
 import tvdb_api
+'''
 
+#IMPORTS with install
+import pip
+import sys
+import os
+import unicodedata
+import ntpath
+import re
+import datetime
+import array
+import subprocess
+import json
+import datetime
+import random
+
+def install( package ):
+    #pip <10
+    #pip.main(['install', package])
+    #pip 10
+    try:
+        # install pkg
+        subprocess.check_call(["python", '-m', 'pip', 'install', package])
+    except Exception:
+        print( 'pip cant install: ' + str( package ) )
+        print( 'Need admin rights on first launch to install dependecies. Failed in: ' + str( package ) )
+        exit()
+    # upgrade pkg
+    #subprocess.check_call(["python", '-m', 'pip', 'install',"--upgrade", package])
+
+#imdb
+try:
+    from imdb import IMDb
+except ImportError:
+    install( 'IMDbPY' )
+    from imdb import IMDb
+
+#python_filmaffinity
+try:
+    import python_filmaffinity
+except ImportError:
+    install( 'python_filmaffinity' )
+    import python_filmaffinity
+
+#omdb
+try:
+    import omdb
+except ImportError:
+    install( 'omdb' )
+    import omdb
+
+#tvdb_api
+try:
+    import tvdb_api
+except ImportError:
+    install( 'tvdb_api' )
+    import tvdb_api
+
+#SEARCHERS
+
+#TODO googler
+
+#TODO ddgr
+    
+#ducker
+try:
+    import ducker
+except ImportError:
+    install( 'ducker' )
 
 #CONFIGS
-VERSION='0.4'
+VERSION='0.6'
 #VERBOSE MODE -v
 G_DEBUG=False
 #remove extension from filename
@@ -401,13 +470,14 @@ def getParam( param ):
 def getSearcher():
     result = ''
     global CMDSEARCHLIST
+    valids = []
     
     for s in CMDSEARCHLIST:
         if is_tool(s):
-            printE('External search set to:', s)
-            result=s
+            valids.append(s)
             break
-    
+    result=random.choice(valids)
+    printE('External search set to:', result)
     return result
 
 def is_tool(name):
@@ -605,22 +675,22 @@ def searchTitle( title, extra='imdb.com' ):
     #cmd = cmdapp + ' --json "' + str( encodeUTF8( title ) ) + ' ' + extra + '"'
     #cmd = cmdapp + ' --json "' + str( encodeUTF8( title ), 'UTF-8' ) + ' ' + extra + '"'
     #cmd = cmdapp + ' --json "' + str( encodeUTF8( title ), 'ascii', 'ignore' ) + ' ' + extra + '"'
-    cmd = cmdapp + ' --json "' + str(remove_accents(title)) + ' ' + str(extra) + '" 2> /dev/null '
+    cmd = cmdapp + ' --json "' + str(remove_accents(title)) + ' site:' + str(extra) + '" 2> /dev/null '
     
     data=searchExtCMD(cmd)
     
-    if data == False:
+    if data == False or len(data) == 0:
         for s in CMDSEARCHLIST:
             if s not in inlist:
                 cmdapp=s
                 inlist.append(cmdapp)
                 #cmd = cmdapp + ' -w imdb.com --json "' + str( title ) + '"'
-                cmd = cmdapp + ' --json "' + str( remove_accents(title) ) + ' ' + extra + '" 2> /dev/null '
+                cmd = cmdapp + ' --json "' + str( remove_accents(title) ) + ' site:' + extra + '" 2> /dev/null '
                 data=searchExtCMD(cmd)
-                if data != False:
+                if data != False and len(data) > 0:
                     break
     
-    if isinstance(data, list):
+    if isinstance(data, list) and len(data) > 0:
         result = data
         printE( "Links: ", len(data))
     else:
@@ -1150,7 +1220,8 @@ for FILE in FILELIST:
                     printE( 'URL: ' + d[ 'url' ] )
                     printE( 'Abstract: ' + d[ 'abstract' ] )
                     url=d[ 'url' ]
-                    break
+                    if extractIMDBID(url):
+                        break
             else:
                 printE( 'Search without data.' )
         
@@ -1392,7 +1463,7 @@ for FILE in FILELIST:
                 SEARCHTITLE=G_FSEARCHSTRING
             
             printE( 'OMDB Search Title: ', SEARCHTITLE )
-            searchdata = searchTitle( SEARCHTITLE, 'imdb.com' )
+            searchdata = searchTitle( SEARCHTITLE )
             url=False
             
             if searchdata != False and G_INTERACTIVE:
