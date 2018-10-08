@@ -1,4 +1,4 @@
-# pymediaident 0.4
+# pymediaident 0.6
 python media (movies, series) ident, rename and show json data. beta Version.
 ![pymediaident](https://raw.githubusercontent.com/EsTass/pymediaident/master/img/example.gif)
 
@@ -6,6 +6,9 @@ python media (movies, series) ident, rename and show json data. beta Version.
 Renamer for media files trying to identify searching on web (googler,ddgr,ducker), getting data from IMDBpy, python_filmaffinity, OMDB, TheTVDB.
 
 ## Installation
+
+### Dependencies Auto
+On first run try to install dependencies with pip (install before) and needed admin rights (sudo).
 
 ### Dependencies
  - googler: https://pypi.python.org/pypi/googler
