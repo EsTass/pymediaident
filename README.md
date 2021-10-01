@@ -34,7 +34,7 @@ pip install googler IMDBpy python_filmaffinity omdb tvdb_api
 Then install pymediaident
 ```
 wget https://raw.githubusercontent.com/EsTass/pymediaident/master/pymediaident.py
-chmod +x pymediaident
+chmod +x pymediaident.py
 cp ./pymediaident.py /usr/bin
 ```
 Test all ok:
